@@ -29,4 +29,4 @@ Added 15 sample rooms (27 total), distributed across floors 0-4. Browser verifie
 
 ## GitHub preparation — 2026-09-20
 
-A clean source copy installed successfully with npm ci using Node.js 24.19.0 on Windows. TypeScript, domain tests, all 52 appearance contrast pairs and npm run build passed in that clean copy, without local execution-profile settings. Linux execution remains to be verified by GitHub Actions. Source export excludes generated directories and credentials; lockfile dependency URLs use the public npm registry.
+A clean source copy installed successfully with npm ci using Node.js 24.19.0 on Windows. TypeScript, domain tests, all 52 appearance contrast pairs and npm run build passed in that clean copy, without local execution-profile settings. GitHub Actions also passed all steps on Linux in run 35515429401 for import commit 5d3d758c1eb4145ca88836f462ec7ab245bb5777. Source export excludes generated directories and credentials; lockfile dependency URLs use the public npm registry.

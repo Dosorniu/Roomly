@@ -22,5 +22,7 @@ Deployment, shared database and production authentication are out of scope.
 Private repository created: https://github.com/Dosorniu/Roomly (default branch: main).
 GitHub explicitly reports that branch protection is not enforced for this private repository on its current plan. Do not describe main as protected. Use PRs and successful checks as the team policy until an eligible plan enables enforcement. No plan or visibility change was made.
 
-The main rule is saved on GitHub with PR review, stale-approval dismissal, up-to-date branches, conversation resolution and no bypass. GitHub labels it Not enforced. The named Roomly checks status must still be selected after the first remote CI run.
+The main rule is saved on GitHub with PR review, stale-approval dismissal, up-to-date branches, conversation resolution and no bypass. The required Roomly checks status is selected with GitHub Actions as its source. GitHub labels the rule Not enforced; failed/unapproved merge blocking cannot be guaranteed on the current plan.
+
+Source import: https://github.com/Dosorniu/Roomly/pull/1. The first Linux CI run passed dependency installation, TypeScript, domain tests, contrast checks and production build: https://github.com/Dosorniu/Roomly/actions/runs/35515429401.
 
