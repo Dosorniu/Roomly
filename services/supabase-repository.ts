@@ -5,6 +5,7 @@ import { rooms } from "../data/catalog";
 import { getSupabase } from "./supabase-client";
 import { sessionStore } from "./session-store";
 import { isStudyState } from "./state-validation";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 const empty: StudyState = {
   sessions: [],
@@ -18,6 +19,8 @@ export class SupabaseRepository implements RoomRepository {
   private generation = 0;
   private queue: Promise<void> = Promise.resolve();
   private refreshing = false;
+  private refreshAgain = false;
+  private active = false;
   getSnapshot = () => this.state;
   subscribe = (fn: () => void) => {
     this.listeners.add(fn);
@@ -29,7 +32,11 @@ export class SupabaseRepository implements RoomRepository {
     this.listeners.forEach((fn) => fn());
   }
   refresh = () => {
-    if (this.refreshing) return this.queue;
+    if (!this.active) return Promise.resolve();
+    if (this.refreshing) {
+      this.refreshAgain = true;
+      return this.queue;
+    }
     this.refreshing = true;
     const generation = this.generation;
     const run = async () => {
@@ -98,6 +105,10 @@ export class SupabaseRepository implements RoomRepository {
     };
     this.queue = this.queue.then(run, run).finally(() => {
       this.refreshing = false;
+      if (this.refreshAgain && this.active) {
+        this.refreshAgain = false;
+        void this.refresh();
+      }
     });
     return this.queue;
   };
@@ -124,6 +135,7 @@ export class SupabaseRepository implements RoomRepository {
     await this.refresh();
   };
   start = () => {
+    this.active = true;
     this.generation++;
     sessionStore.set({
       ready: false,
@@ -134,21 +146,39 @@ export class SupabaseRepository implements RoomRepository {
     });
     try {
       const client = getSupabase();
+      let channel: RealtimeChannel | undefined;
+      let subscribedUser = "";
       const {
         data: { subscription },
-      } = client.auth.onAuthStateChange(() => {
+      } = client.auth.onAuthStateChange((_event, session) => {
+        const nextUser = session?.user.id || "";
+        if (nextUser !== subscribedUser) {
+          this.generation++;
+          if (channel) void client.removeChannel(channel);
+          channel = undefined;
+          subscribedUser = nextUser;
+          this.state = empty;
+          this.notify();
+          sessionStore.set({
+            userId: nextUser,
+            watches: [],
+            notices: [],
+            ready: false,
+          });
+          if (nextUser)
+            channel = client
+              .channel("roomly-status")
+              .on(
+                "postgres_changes",
+                { event: "UPDATE", schema: "public", table: "roomly_revision" },
+                () => {
+                  void this.refresh();
+                },
+              )
+              .subscribe();
+        }
         void this.refresh();
       });
-      const channel = client
-        .channel("roomly-status")
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "roomly_revision" },
-          () => {
-            void this.refresh();
-          },
-        )
-        .subscribe();
       const timer = setInterval(() => {
         void this.refresh();
       }, 5000);
@@ -158,10 +188,12 @@ export class SupabaseRepository implements RoomRepository {
       window.addEventListener("focus", focus);
       void this.refresh();
       return () => {
+        this.active = false;
+        this.refreshAgain = false;
         this.generation++;
         clearInterval(timer);
         subscription.unsubscribe();
-        void client.removeChannel(channel);
+        if (channel) void client.removeChannel(channel);
         window.removeEventListener("focus", focus);
       };
     } catch (error) {
@@ -173,6 +205,7 @@ export class SupabaseRepository implements RoomRepository {
             : "Unable to initialize Supabase.",
       });
       return () => {
+        this.active = false;
         this.generation++;
       };
     }

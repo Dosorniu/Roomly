@@ -95,6 +95,8 @@ npm run lint
 npx tsc --noEmit
 node scripts/test-domain.mjs
 node scripts/check-appearance.mjs
+npm run test:database
+npm run test:e2e
 npm run build
 ```
 

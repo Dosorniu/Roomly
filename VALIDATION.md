@@ -4,14 +4,14 @@
 
 - Lint: 0 errors; two advisory warnings remain for locally supplied img assets.
 - TypeScript, domain/routes tests, 52 contrast pairs and production build pass.
-- Four automated Chromium browser scenarios pass: real HTTP 404/legacy redirects,
+- Four automated Chromium browser scenarios pass in development and production: real HTTP 404/legacy redirects,
   mobile search over 27 rooms, cross-tab check-in/join/holder-transfer/leave, and
   pre-hydration restoration of the saved dark appearance.
 - Real SQL migrations/RPCs pass in local PostgreSQL WASM (PGlite): authentication
   and approved-email gates, private identities, rejected direct writes, capacity,
   holder permissions/transfer, durable watches/alerts and expiration to Unknown.
-- CI additionally runs these migrations against PostgreSQL 17 and races two
-  independent connections for one room. Its result is recorded on the PR.
+- CI also passed the migrations against PostgreSQL 17 and the race between two
+  independent connections for one room (run 35582332211). Final CI results are recorded on PR #2.
 - Dependency audit after the targeted toolchain updates: 0 known vulnerabilities.
 - No live Supabase project is connected. Hosted email delivery, Realtime and
   two-device sign-in remain unverified and are required before shared deployment.
