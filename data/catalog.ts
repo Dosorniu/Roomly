@@ -1,40 +1,268 @@
-import type { University, Campus, Building, Floor, Room, User, StudyState } from '../types/domain';
-export const universities: University[] = [{ id: 'cbs', name: 'CBS International Business School', slug: 'cbs' }];
-export const campuses: Campus[] = [{ id: 'main', universityId: 'cbs', name: 'Main Campus' }];
-export const buildings: Building[] = [{ id: 'main-building', campusId: 'main', name: 'Main Building', slug: 'main-building', image: '/campus-illustration.jpg' }];
-export const floors: Floor[] = [0,1,2,3,4].map(n => ({ id: `floor-${n}`, buildingId: 'main-building', number: n, name: ['Ground floor','1st floor','2nd floor','3rd floor','4th floor'][n] }));
-export const users: User[] = ['A','B','C'].map(x => ({ id: `student-${x}`, displayName: `Student ${x}`, universityId: 'cbs' }));
+import type {
+  University,
+  Campus,
+  Building,
+  Floor,
+  Room,
+  User,
+  StudyState,
+} from "../types/domain";
+export const universities: University[] = [
+  { id: "cbs", name: "CBS International Business School", slug: "cbs" },
+];
+export const campuses: Campus[] = [
+  { id: "main", universityId: "cbs", name: "Main Campus" },
+];
+export const buildings: Building[] = [
+  {
+    id: "main-building",
+    campusId: "main",
+    name: "Main Building",
+    slug: "main-building",
+    image: "/campus-illustration.jpg",
+  },
+];
+export const floors: Floor[] = [0, 1, 2, 3, 4].map((n) => ({
+  id: `floor-${n}`,
+  buildingId: "main-building",
+  number: n,
+  name: ["Ground floor", "1st floor", "2nd floor", "3rd floor", "4th floor"][n],
+}));
+export const users: User[] = ["A", "B", "C"].map((x) => ({
+  id: `student-${x}`,
+  displayName: `Student ${x}`,
+  universityId: "cbs",
+}));
 export const rooms: Room[] = [
- ['lounge','Student Lounge','G.01',0,'Lounge',12,['Power outlets','Group friendly']],
- ['reading','Reading Corner','G.02',0,'Quiet space',4,['Quiet zone','Daylight']],
- ['112','Barcelona','1.12',1,'Study room',6,['Whiteboard','Power outlets']],
- ['114','Madrid','1.14',1,'Study room',4,['Display','Power outlets']],
- ['118','Berlin','1.18',1,'Quiet space',2,['Quiet zone','Daylight']],
- ['203','Amsterdam','2.03',2,'Study room',6,['Whiteboard','Daylight']],
- ['214','Copenhagen','2.14',2,'Study room',6,['Whiteboard','Display']],
- ['216','Paris','2.16',2,'Study room',8,['Display','Power outlets']],
- ['301','Tokyo','3.01',3,'Study room',4,['Whiteboard','Daylight']],
- ['302','Lisbon','3.02',3,'Quiet space',2,['Quiet zone','Power outlets']],
- ['303','Vienna','3.03',3,'Study room',6,['Display','Whiteboard']],
- ['321','Study Room','3.21',3,'Study room',4,['Power outlets','Daylight']],
- ['demo-0-40','Oslo','0.40',0,'Study room',6,['Whiteboard','Power outlets']],
- ['demo-0-41','Stockholm','0.41',0,'Quiet space',2,['Quiet zone','Daylight']],
- ['demo-0-42','Helsinki','0.42',0,'Lounge',10,['Power outlets','Group friendly']],
- ['demo-1-40','Dublin','1.40',1,'Study room',6,['Whiteboard','Power outlets']],
- ['demo-1-41','Prague','1.41',1,'Quiet space',2,['Quiet zone','Daylight']],
- ['demo-1-42','Rome','1.42',1,'Lounge',10,['Power outlets','Group friendly']],
- ['demo-2-40','Milan','2.40',2,'Study room',6,['Whiteboard','Power outlets']],
- ['demo-2-41','Athens','2.41',2,'Quiet space',2,['Quiet zone','Daylight']],
- ['demo-2-42','Zurich','2.42',2,'Lounge',10,['Power outlets','Group friendly']],
- ['demo-3-40','Seoul','3.40',3,'Study room',6,['Whiteboard','Power outlets']],
- ['demo-3-41','Kyoto','3.41',3,'Quiet space',2,['Quiet zone','Daylight']],
- ['demo-3-42','Boston','3.42',3,'Lounge',10,['Power outlets','Group friendly']],
- ['demo-4-40','Montreal','4.40',4,'Study room',6,['Whiteboard','Power outlets']],
- ['demo-4-41','Melbourne','4.41',4,'Quiet space',2,['Quiet zone','Daylight']],
- ['demo-4-42','Singapore','4.42',4,'Lounge',10,['Power outlets','Group friendly']],
-].map(([id,name,number,floor,type,capacity,features]) => ({ id: String(id), name:String(name),number:String(number),floorId:`floor-${floor}`,type:String(type),capacity:Number(capacity),features:features as string[],enabled:true }));
+  [
+    "lounge",
+    "Student Lounge",
+    "G.01",
+    0,
+    "Lounge",
+    12,
+    ["Power outlets", "Group friendly"],
+  ],
+  [
+    "reading",
+    "Reading Corner",
+    "G.02",
+    0,
+    "Quiet space",
+    4,
+    ["Quiet zone", "Daylight"],
+  ],
+  [
+    "112",
+    "Barcelona",
+    "1.12",
+    1,
+    "Study room",
+    6,
+    ["Whiteboard", "Power outlets"],
+  ],
+  ["114", "Madrid", "1.14", 1, "Study room", 4, ["Display", "Power outlets"]],
+  ["118", "Berlin", "1.18", 1, "Quiet space", 2, ["Quiet zone", "Daylight"]],
+  ["203", "Amsterdam", "2.03", 2, "Study room", 6, ["Whiteboard", "Daylight"]],
+  ["214", "Copenhagen", "2.14", 2, "Study room", 6, ["Whiteboard", "Display"]],
+  ["216", "Paris", "2.16", 2, "Study room", 8, ["Display", "Power outlets"]],
+  ["301", "Tokyo", "3.01", 3, "Study room", 4, ["Whiteboard", "Daylight"]],
+  [
+    "302",
+    "Lisbon",
+    "3.02",
+    3,
+    "Quiet space",
+    2,
+    ["Quiet zone", "Power outlets"],
+  ],
+  ["303", "Vienna", "3.03", 3, "Study room", 6, ["Display", "Whiteboard"]],
+  [
+    "321",
+    "Study Room",
+    "3.21",
+    3,
+    "Study room",
+    4,
+    ["Power outlets", "Daylight"],
+  ],
+  [
+    "demo-0-40",
+    "Oslo",
+    "0.40",
+    0,
+    "Study room",
+    6,
+    ["Whiteboard", "Power outlets"],
+  ],
+  [
+    "demo-0-41",
+    "Stockholm",
+    "0.41",
+    0,
+    "Quiet space",
+    2,
+    ["Quiet zone", "Daylight"],
+  ],
+  [
+    "demo-0-42",
+    "Helsinki",
+    "0.42",
+    0,
+    "Lounge",
+    10,
+    ["Power outlets", "Group friendly"],
+  ],
+  [
+    "demo-1-40",
+    "Dublin",
+    "1.40",
+    1,
+    "Study room",
+    6,
+    ["Whiteboard", "Power outlets"],
+  ],
+  [
+    "demo-1-41",
+    "Prague",
+    "1.41",
+    1,
+    "Quiet space",
+    2,
+    ["Quiet zone", "Daylight"],
+  ],
+  [
+    "demo-1-42",
+    "Rome",
+    "1.42",
+    1,
+    "Lounge",
+    10,
+    ["Power outlets", "Group friendly"],
+  ],
+  [
+    "demo-2-40",
+    "Milan",
+    "2.40",
+    2,
+    "Study room",
+    6,
+    ["Whiteboard", "Power outlets"],
+  ],
+  [
+    "demo-2-41",
+    "Athens",
+    "2.41",
+    2,
+    "Quiet space",
+    2,
+    ["Quiet zone", "Daylight"],
+  ],
+  [
+    "demo-2-42",
+    "Zurich",
+    "2.42",
+    2,
+    "Lounge",
+    10,
+    ["Power outlets", "Group friendly"],
+  ],
+  [
+    "demo-3-40",
+    "Seoul",
+    "3.40",
+    3,
+    "Study room",
+    6,
+    ["Whiteboard", "Power outlets"],
+  ],
+  [
+    "demo-3-41",
+    "Kyoto",
+    "3.41",
+    3,
+    "Quiet space",
+    2,
+    ["Quiet zone", "Daylight"],
+  ],
+  [
+    "demo-3-42",
+    "Boston",
+    "3.42",
+    3,
+    "Lounge",
+    10,
+    ["Power outlets", "Group friendly"],
+  ],
+  [
+    "demo-4-40",
+    "Montreal",
+    "4.40",
+    4,
+    "Study room",
+    6,
+    ["Whiteboard", "Power outlets"],
+  ],
+  [
+    "demo-4-41",
+    "Melbourne",
+    "4.41",
+    4,
+    "Quiet space",
+    2,
+    ["Quiet zone", "Daylight"],
+  ],
+  [
+    "demo-4-42",
+    "Singapore",
+    "4.42",
+    4,
+    "Lounge",
+    10,
+    ["Power outlets", "Group friendly"],
+  ],
+].map(([id, name, number, floor, type, capacity, features]) => ({
+  id: String(id),
+  name: String(name),
+  number: String(number),
+  floorId: `floor-${floor}`,
+  type: String(type),
+  capacity: Number(capacity),
+  features: features as string[],
+  enabled: true,
+}));
 export function createSeed(now = Date.now()): StudyState {
- const occupied = ['114','216','303']; const shared = ['lounge','203','214'];
- const sessions = [...occupied,...shared].map((roomId,i) => ({id:`seed-${roomId}`,roomId,holderId:`demo-holder-${roomId}`,startedAt:now-600000,expectedEnd:now+(35+i*12)*60000,openToShare:shared.includes(roomId)}));
- return {revision:0,sessions,memberships:sessions.flatMap(s => [{sessionId:s.id,userId:s.holderId,joinedAt:now-600000},...(s.openToShare?[{sessionId:s.id,userId:`demo-guest-${s.roomId}`,joinedAt:now-300000}]:[])]),observations:rooms.filter(r=>!sessions.some(s=>s.roomId===r.id)).map(r=>({roomId:r.id,status:['321','reading'].includes(r.id)?'unknown':'free',updatedAt:now}))};
+  const occupied = ["114", "216", "303"];
+  const shared = ["lounge", "203", "214"];
+  const sessions = [...occupied, ...shared].map((roomId, i) => ({
+    id: `seed-${roomId}`,
+    roomId,
+    holderId: `demo-holder-${roomId}`,
+    startedAt: now - 600000,
+    expectedEnd: now + (35 + i * 12) * 60000,
+    openToShare: shared.includes(roomId),
+  }));
+  return {
+    revision: 0,
+    sessions,
+    memberships: sessions.flatMap((s) => [
+      { sessionId: s.id, userId: s.holderId, joinedAt: now - 600000 },
+      ...(s.openToShare
+        ? [
+            {
+              sessionId: s.id,
+              userId: `demo-guest-${s.roomId}`,
+              joinedAt: now - 300000,
+            },
+          ]
+        : []),
+    ]),
+    observations: rooms
+      .filter((r) => !sessions.some((s) => s.roomId === r.id))
+      .map((r) => ({
+        roomId: r.id,
+        status: ["321", "reading"].includes(r.id) ? "unknown" : "free",
+        updatedAt: now,
+      })),
+  };
 }

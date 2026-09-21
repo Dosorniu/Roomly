@@ -1,17 +1,211 @@
-'use client';
-import { useState } from 'react';
-import { ArrowRight, Search, SlidersHorizontal, X } from 'lucide-react';
-import { floors, rooms } from '@/data/catalog';
-import type { RoomView,Status } from '@/types/domain';
-import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from '@/components/ui/select';
-import { Empty,EmptyHeader,EmptyTitle,EmptyDescription } from '@/components/ui/empty';
-import { BuildingHeroVisual } from './BuildingHeroVisual';
-import { RoomCard } from './RoomCard';
-interface Props { views:RoomView[]; query:string; onQuery:(s:string)=>void; status:Status|'all'; onStatus:(s:Status|'all')=>void; floor:string; onFloor:(s:string)=>void; capacity:string; onCapacity:(s:string)=>void; type:string; onType:(s:string)=>void; onReset:()=>void; }
-export function DiscoverRooms(p:Props) {
-  const [expanded,setExpanded]=useState(false);
-  const active=p.floor!=='all'||p.capacity!=='all'||p.type!=='all'||p.status==='occupied'||p.status==='unknown';
-  const title=p.query.trim()?'Search results':p.status==='free'?'Available now':p.status==='share'?'Open to Share':'All study spaces';
-  const primary=[{value:'free',label:'Free now'},{value:'share',label:'Open to Share'},{value:'all',label:'All rooms'}] as const;
-  return <div className="discovery-layout"><section className="discovery-intro"><span className="eyebrow">YOUR CAMPUS, AT A GLANCE</span><h1>Find your study space.</h1><p className="intro-description">A quick and easy way to find a free or shared room on campus.</p><div className="search-box"><Search size={21}/><input aria-label="Search rooms" placeholder="Search by room, building or floor..." value={p.query} onChange={e=>p.onQuery(e.target.value)}/>{p.query&&<button className="icon-button" aria-label="Clear search" onClick={()=>p.onQuery('')}><X size={17}/></button>}</div><div className="primary-pills" aria-label="Room status">{primary.map(s=><button key={s.value} className={p.status===s.value?'selected':''} aria-pressed={p.status===s.value} onClick={()=>p.onStatus(s.value)}>{s.label}</button>)}</div></section><BuildingHeroVisual/><section className="room-section" id="rooms"><div className="section-title"><h2>{title}</h2><button className="text-button" onClick={()=>{p.onReset();p.onStatus('all');}}>View all rooms <ArrowRight size={17}/></button></div><div className="room-list">{p.views.length?p.views.map(view=><RoomCard key={view.room.id} view={view}/>):<Empty className="empty-state"><EmptyHeader><EmptyTitle>No matching rooms</EmptyTitle><EmptyDescription>{p.status==='free'&&!p.query?'No rooms are confirmed free right now. View all rooms to check shared or unconfirmed spaces.':'Try another search or broaden your filters.'}</EmptyDescription></EmptyHeader><button className="secondary-button" onClick={()=>{p.onReset();p.onStatus('all');}}>View all rooms</button></Empty>}</div><div className="list-tools"><span aria-live="polite">{p.views.length} {p.views.length===1?'space':'spaces'} · Student-reported</span><button className="text-button filter-toggle" aria-expanded={expanded} onClick={()=>setExpanded(!expanded)}><SlidersHorizontal size={15}/>{active?'Filters active':'More filters'}</button></div>{expanded&&<div className="advanced-filters"><Select value={p.floor} onValueChange={p.onFloor}><SelectTrigger aria-label="Floor"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">All floors</SelectItem>{floors.map(f=><SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select><Select value={p.capacity} onValueChange={p.onCapacity}><SelectTrigger aria-label="Minimum capacity"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Any capacity</SelectItem><SelectItem value="4">4+ people</SelectItem><SelectItem value="6">6+ people</SelectItem><SelectItem value="8">8+ people</SelectItem></SelectContent></Select><Select value={p.type} onValueChange={p.onType}><SelectTrigger aria-label="Room type"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">All room types</SelectItem>{Array.from(new Set(rooms.map(r=>r.type))).map(t=><SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select><Select value={p.status} onValueChange={s=>p.onStatus(s as Status|'all')}><SelectTrigger aria-label="All status filters"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem><SelectItem value="free">Free</SelectItem><SelectItem value="share">Open to Share</SelectItem><SelectItem value="occupied">Occupied</SelectItem><SelectItem value="unknown">Unknown</SelectItem></SelectContent></Select>{active&&<button className="text-button" onClick={p.onReset}>Clear filters</button>}</div>}</section></div>;
+"use client";
+import { useState } from "react";
+import { ArrowRight, Search, SlidersHorizontal, X } from "lucide-react";
+import { floors, rooms } from "@/data/catalog";
+import type { RoomView, Status } from "@/types/domain";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
+import { BuildingHeroVisual } from "./BuildingHeroVisual";
+import { RoomCard } from "./RoomCard";
+interface Props {
+  views: RoomView[];
+  query: string;
+  onQuery: (s: string) => void;
+  status: Status | "all";
+  onStatus: (s: Status | "all") => void;
+  floor: string;
+  onFloor: (s: string) => void;
+  capacity: string;
+  onCapacity: (s: string) => void;
+  type: string;
+  onType: (s: string) => void;
+  onReset: () => void;
+}
+export function DiscoverRooms(p: Props) {
+  const [expanded, setExpanded] = useState(false);
+  const active =
+    p.floor !== "all" ||
+    p.capacity !== "all" ||
+    p.type !== "all" ||
+    p.status === "occupied" ||
+    p.status === "unknown";
+  const title = p.query.trim()
+    ? "Search results"
+    : p.status === "free"
+      ? "Available now"
+      : p.status === "share"
+        ? "Open to Share"
+        : "All study spaces";
+  const primary = [
+    { value: "free", label: "Free now" },
+    { value: "share", label: "Open to Share" },
+    { value: "all", label: "All rooms" },
+  ] as const;
+  return (
+    <div className="discovery-layout">
+      <section className="discovery-intro">
+        <span className="eyebrow">YOUR CAMPUS, AT A GLANCE</span>
+        <h1>Find your study space.</h1>
+        <p className="intro-description">
+          A quick and easy way to find a free or shared room on campus.
+        </p>
+        <div className="search-box">
+          <Search size={21} />
+          <input
+            aria-label="Search rooms"
+            placeholder="Search by room, building or floor..."
+            value={p.query}
+            onChange={(e) => p.onQuery(e.target.value)}
+          />
+          {p.query && (
+            <button
+              className="icon-button"
+              aria-label="Clear search"
+              onClick={() => p.onQuery("")}
+            >
+              <X size={17} />
+            </button>
+          )}
+        </div>
+        <div className="primary-pills" aria-label="Room status">
+          {primary.map((s) => (
+            <button
+              key={s.value}
+              className={p.status === s.value ? "selected" : ""}
+              aria-pressed={p.status === s.value}
+              onClick={() => p.onStatus(s.value)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </section>
+      <BuildingHeroVisual />
+      <section className="room-section" id="rooms">
+        <div className="section-title">
+          <h2>{title}</h2>
+          <button
+            className="text-button"
+            onClick={() => {
+              p.onReset();
+              p.onStatus("all");
+            }}
+          >
+            View all rooms <ArrowRight size={17} />
+          </button>
+        </div>
+        <div className="room-list">
+          {p.views.length ? (
+            p.views.map((view) => <RoomCard key={view.room.id} view={view} />)
+          ) : (
+            <Empty className="empty-state">
+              <EmptyHeader>
+                <EmptyTitle>No matching rooms</EmptyTitle>
+                <EmptyDescription>
+                  {p.status === "free" && !p.query
+                    ? "No rooms are confirmed free right now. View all rooms to check shared or unconfirmed spaces."
+                    : "Try another search or broaden your filters."}
+                </EmptyDescription>
+              </EmptyHeader>
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  p.onReset();
+                  p.onStatus("all");
+                }}
+              >
+                View all rooms
+              </button>
+            </Empty>
+          )}
+        </div>
+        <div className="list-tools">
+          <span aria-live="polite">
+            {p.views.length} {p.views.length === 1 ? "space" : "spaces"} ·
+            Student-reported
+          </span>
+          <button
+            className="text-button filter-toggle"
+            aria-expanded={expanded}
+            onClick={() => setExpanded(!expanded)}
+          >
+            <SlidersHorizontal size={15} />
+            {active ? "Filters active" : "More filters"}
+          </button>
+        </div>
+        {expanded && (
+          <div className="advanced-filters">
+            <Select value={p.floor} onValueChange={p.onFloor}>
+              <SelectTrigger aria-label="Floor">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All floors</SelectItem>
+                {floors.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={p.capacity} onValueChange={p.onCapacity}>
+              <SelectTrigger aria-label="Minimum capacity">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any capacity</SelectItem>
+                <SelectItem value="4">4+ people</SelectItem>
+                <SelectItem value="6">6+ people</SelectItem>
+                <SelectItem value="8">8+ people</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={p.type} onValueChange={p.onType}>
+              <SelectTrigger aria-label="Room type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All room types</SelectItem>
+                {Array.from(new Set(rooms.map((r) => r.type))).map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={p.status}
+              onValueChange={(s) => p.onStatus(s as Status | "all")}
+            >
+              <SelectTrigger aria-label="All status filters">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="share">Open to Share</SelectItem>
+                <SelectItem value="occupied">Occupied</SelectItem>
+                <SelectItem value="unknown">Unknown</SelectItem>
+              </SelectContent>
+            </Select>
+            {active && (
+              <button className="text-button" onClick={p.onReset}>
+                Clear filters
+              </button>
+            )}
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }

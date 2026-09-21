@@ -5,7 +5,7 @@
 1. Update local `main` and create a focused branch: `artem-room-search`, `maria-mobile-layout`, `jane-accessibility` or `william-tests`. Codex branches may use `codex/<task>`.
 2. Read README.md and relevant code first. Preserve architecture, dependencies, routes and UI unless the task requires a specific change.
 3. Make one or two related changes; avoid unrelated rewrites or dependency upgrades.
-4. Run `npx tsc --noEmit`, `node scripts/test-domain.mjs`, `node scripts/check-appearance.mjs`, and `npm run build`. Use `npm ci` after cloning or lockfile changes.
+4. Run `npm run lint`, `npm run test:database`, `npm run test:e2e`, `npx tsc --noEmit`, `node scripts/test-domain.mjs`, `node scripts/check-appearance.mjs`, and `npm run build`. Use `npm ci` after cloning or lockfile changes.
 5. Add the next numbered CHANGELOG.md entry with author, date and changes.
 6. Push your branch, open a PR into `main`, describe behavior and validation, and request teammate review.
 7. Wait for **Roomly checks** to pass on the latest changes. Resolve review comments and update the branch if required. Merge after successful checks and approval; squash merge is recommended.
