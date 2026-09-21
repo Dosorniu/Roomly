@@ -1,2 +1,15 @@
-import { StudyApp } from '@/components/study/StudyApp';
-export default async function RoomPage({params}:{params:Promise<{university:string;building:string;floor:string;room:string}>}){const p=await params;return <StudyApp requestedPath={`/app/${p.university}/${p.building}/${p.floor}/${p.room}`}/>;}
+import { notFound, permanentRedirect } from "next/navigation";
+import {
+  resolveLegacyRoom,
+  roomPath,
+  type LegacyRoomParams,
+} from "@/services/routes";
+export default async function RoomPage({
+  params,
+}: {
+  params: Promise<LegacyRoomParams>;
+}) {
+  const room = resolveLegacyRoom(await params);
+  if (!room) notFound();
+  permanentRedirect(roomPath(room));
+}

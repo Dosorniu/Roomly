@@ -1,10 +1,28 @@
 # V1 validation
 
+## Current checks — 2026-09-21
+
+- Lint: 0 errors; two advisory warnings remain for locally supplied img assets.
+- TypeScript, domain/routes tests, 52 contrast pairs and production build pass.
+- Four automated Chromium browser scenarios pass in development and production: real HTTP 404/legacy redirects,
+  mobile search over 27 rooms, cross-tab check-in/join/holder-transfer/leave, and
+  pre-hydration restoration of the saved dark appearance.
+- Real SQL migrations/RPCs pass in local PostgreSQL WASM (PGlite): authentication
+  and approved-email gates, private identities, rejected direct writes, capacity,
+  holder permissions/transfer, durable watches/alerts and expiration to Unknown.
+- CI also passed the migrations against PostgreSQL 17 and the race between two
+  independent connections for one room (run 35582332211). Final CI results are recorded on PR #2.
+- Dependency audit after the targeted toolchain updates: 0 known vulnerabilities.
+- No live Supabase project is connected. Hosted email delivery, Realtime and
+  two-device sign-in remain unverified and are required before shared deployment.
+
+The sections below are historical checks of earlier iterations.
+
 - TypeScript: `tsc --noEmit` passed.
 - Production build: passed; emitted Worker default export exposes a callable `fetch`.
 - Business-rule tests: check-in; conflicting check-in; joining; one active membership per user; holder permissions; holder transfer; sharing toggle; final leave; free-status freshness; Unknown confirmation; session expiration; invalid durations; room capacity.
 - Browser scenario: Student A checked into Barcelona 1.12 with sharing enabled; Student B joined (2/6); A left; B became holder (1/6); B left; the room became Free.
-- Search for 2.14 returned Copenhagen. Combined filters correctly produced an empty state, and Clear filters restored the 12 rooms.
+- Search for 2.14 returned Copenhagen. Combined filters correctly produced an empty state, and Clear filters restored the then-current 12-room catalog. This historical check predates the expansion to 27 rooms; current tests cover the 27-room catalog.
 - Desktop and 390×844 mobile views inspected. Mobile document width did not exceed viewport width; the first room begins in the initial viewport. Floor and status selectors scroll horizontally within their own controls.
 - WebMCP read tool registered; valid search returned current room availability, and a non-string query was intentionally rejected.
 - Cross-device synchronization, production authentication, server concurrency and push notifications are intentionally outside this local demonstration.

@@ -15,6 +15,18 @@ jobs:
     name: Roomly checks
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: roomly-test-only
+          POSTGRES_DB: roomly_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,9 +39,21 @@ jobs:
         run: npm ci
       - name: TypeScript
         run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
       - name: Room business rules
         run: node scripts/test-domain.mjs
       - name: Appearance contrast
         run: node scripts/check-appearance.mjs
+      - name: PostgreSQL integration and concurrency
+        run: npm run test:database
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:roomly-test-only@localhost:5432/roomly_test
+      - name: Install browser for E2E
+        run: npx playwright install --with-deps chromium
+      - name: Browser regression tests
+        run: npm run test:e2e
       - name: Production build
         run: npm run build
+      - name: Dependency audit
+        run: npm audit --audit-level=high
