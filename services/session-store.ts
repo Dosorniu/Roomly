@@ -7,6 +7,7 @@ export type SessionSnapshot = {
   ready: boolean;
   now: number;
   userId: string;
+  accessGranted: boolean;
   watches: string[];
   notices: Notice[];
   error: string | null;
@@ -15,6 +16,7 @@ const initial: SessionSnapshot = {
   ready: false,
   now: 0,
   userId: "student-A",
+  accessGranted: false,
   watches: [],
   notices: [],
   error: null,
@@ -71,7 +73,12 @@ export function startDemoSession() {
   }
   previous = {};
   switchDemoUser(id);
-  sessionStore.set({ ready: true, now: Date.now(), error: null });
+  sessionStore.set({
+    ready: true,
+    now: Date.now(),
+    accessGranted: true,
+    error: null,
+  });
 }
 export function switchDemoUser(userId: string) {
   if (!users.some((u) => u.id === userId)) return;
@@ -82,6 +89,7 @@ export function switchDemoUser(userId: string) {
   }
   sessionStore.set({
     userId,
+    accessGranted: true,
     watches: allWatches[userId] || [],
     notices: allNotices[userId] || [],
   });
