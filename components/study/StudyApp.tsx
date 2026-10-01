@@ -30,6 +30,7 @@ import { getSupabase, sharedMode } from "@/services/supabase-client";
 import { SupabaseRepository } from "@/services/supabase-repository";
 import { SignIn } from "./SignIn";
 import { registerRoomTools } from "@/services/webmcp";
+
 export function StudyApp({ roomId }: { roomId?: string }) {
   const { theme } = useAppTheme();
   const state = useSyncExternalStore(
@@ -37,29 +38,55 @@ export function StudyApp({ roomId }: { roomId?: string }) {
     repository.getSnapshot,
     repository.getSnapshot,
   );
-  const { ready, now, userId, watches, notices, error } = useSyncExternalStore(
+  const {
+    ready,
+    now,
+    userId,
+    accessGranted,
+    watches,
+    notices,
+    error,
+  } = useSyncExternalStore(
     sessionStore.subscribe,
     sessionStore.getSnapshot,
     sessionStore.getServerSnapshot,
   );
+
   const [floor, setFloor] = useState("all");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status | "all">("free");
   const [capacity, setCapacity] = useState("all");
   const [type, setType] = useState("all");
+  const [authOpen, setAuthOpen] = useState(false);
   const [panel, setPanel] = useState<
     "help" | "notifications" | "appearance" | null
   >(null);
+
   useEffect(() => repository.start(), []);
+  useEffect(() => registerRoomTools(repository), []);
+  useEffect(() => {
+    if (sharedMode && accessGranted) setAuthOpen(false);
+  }, [accessGranted]);
+
   const views = rooms
     .filter((r) => r.enabled)
     .map((r) => viewRoom(state, r, now));
-  useEffect(() => registerRoomTools(repository), []);
+
+  const canInteract = !sharedMode || accessGranted;
+
   const switchUser = (id: string) => {
     switchDemoUser(id);
     toast(`Demo session: ${users.find((u) => u.id === id)?.displayName}`);
   };
+
+  const requireAuth = () => {
+    if (canInteract) return true;
+    setAuthOpen(true);
+    return false;
+  };
+
   const submit = async (command: Command) => {
+    if (!requireAuth()) return false;
     try {
       await repository.dispatch(command);
       toast.success(
@@ -78,8 +105,11 @@ export function StudyApp({ roomId }: { roomId?: string }) {
       return false;
     }
   };
+
   const watching = (id: string) => watches.includes(id);
+
   const toggleWatch = async (id: string) => {
+    if (!requireAuth()) return;
     try {
       if (repository instanceof SupabaseRepository)
         await repository.watch(id, !watching(id));
@@ -90,6 +120,7 @@ export function StudyApp({ roomId }: { roomId?: string }) {
       );
     }
   };
+
   const currentRoom = views.find(
     (v) =>
       v.session &&
@@ -97,7 +128,11 @@ export function StudyApp({ roomId }: { roomId?: string }) {
         (m) => m.sessionId === v.session!.id && m.userId === userId,
       ),
   );
-  const selected = roomId ? views.find((v) => v.room.id === roomId) : undefined;
+
+  const selected = roomId
+    ? views.find((v) => v.room.id === roomId)
+    : undefined;
+
   const filtered = views.filter((v) => {
     const f = floors.find((f) => f.id === v.room.floorId)!;
     const b = buildings.find((b) => b.id === f.buildingId)!;
@@ -111,6 +146,7 @@ export function StudyApp({ roomId }: { roomId?: string }) {
       text.includes(query.trim().toLowerCase())
     );
   });
+
   const reset = () => {
     setQuery("");
     setFloor("all");
@@ -118,19 +154,23 @@ export function StudyApp({ roomId }: { roomId?: string }) {
     setCapacity("all");
     setType("all");
   };
+
   return (
     <div className="app-shell">
       <Toaster position="bottom-right" theme={theme} />
       <Header
         userId={userId}
+        accessGranted={accessGranted}
         onUser={switchUser}
         onPanel={setPanel}
         hasNotices={notices.length > 0}
         shared={sharedMode}
+        onSignIn={() => setAuthOpen(true)}
         onSignOut={async () => {
           await getSupabase().auth.signOut();
         }}
       />
+
       <main className="workspace">
         {!ready ? (
           <div className="loading-state" role="status">
@@ -146,7 +186,7 @@ export function StudyApp({ roomId }: { roomId?: string }) {
             >
               Try again
             </button>
-            {sharedMode && (
+            {sharedMode && userId && (
               <button
                 className="secondary-button"
                 onClick={() => getSupabase().auth.signOut()}
@@ -155,14 +195,14 @@ export function StudyApp({ roomId }: { roomId?: string }) {
               </button>
             )}
           </section>
-        ) : sharedMode && !userId ? (
-          <SignIn />
         ) : roomId ? (
           selected ? (
             <RoomDetails
-              key={`${selected.room.id}-${userId}`}
+              key={`${selected.room.id}-${userId}-${accessGranted}`}
               now={now}
               shared={sharedMode}
+              canInteract={canInteract}
+              onRequireAuth={() => setAuthOpen(true)}
               view={selected}
               state={state}
               userId={userId}
@@ -216,11 +256,13 @@ export function StudyApp({ roomId }: { roomId?: string }) {
             />
           </>
         )}
+
         <footer>
           <span>Roomly · Room Finder</span>
           <span>Student prototype · Demonstration data</span>
         </footer>
       </main>
+
       <Dialog
         open={panel !== null}
         onOpenChange={(open) => {
@@ -248,6 +290,7 @@ export function StudyApp({ roomId }: { roomId?: string }) {
                     : "In-app alerts for your current demo student while this app is open."}
             </DialogDescription>
           </DialogHeader>
+
           {panel === "appearance" ? (
             <AppearanceSettings />
           ) : panel === "help" ? (
@@ -273,15 +316,31 @@ export function StudyApp({ roomId }: { roomId?: string }) {
               <div className="demo-explainer">
                 <strong>
                   {sharedMode
-                    ? "Shared campus rooms"
+                    ? "Public browsing, verified room actions"
                     : "Try it with three demo students"}
                 </strong>
                 <p>
                   {sharedMode
-                    ? "Room status is shared between signed-in students. Your email is never shown to other students."
+                    ? "Anyone can browse room availability. Check-ins, joining and alerts require passwordless email verification and campus access. Student identities are never shown in public room data."
                     : "Switch Student A, B and C in the top bar. Changes persist locally across tabs. Other devices do not share these demo sessions."}
                 </p>
               </div>
+            </div>
+          ) : sharedMode && !accessGranted ? (
+            <div className="notification-list">
+              <p>
+                Sign in and confirm campus access to watch rooms and receive
+                in-app availability alerts.
+              </p>
+              <button
+                className="primary-button"
+                onClick={() => {
+                  setPanel(null);
+                  setAuthOpen(true);
+                }}
+              >
+                Sign in
+              </button>
             </div>
           ) : (
             <div className="notification-list">
@@ -326,6 +385,30 @@ export function StudyApp({ roomId }: { roomId?: string }) {
               </p>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={authOpen} onOpenChange={setAuthOpen}>
+        <DialogContent className="study-modal">
+          <DialogHeader>
+            <DialogTitle>
+              {userId && !accessGranted
+                ? "Confirm campus access"
+                : "Sign in to Roomly"}
+            </DialogTitle>
+            <DialogDescription>
+              Browse rooms without an account. Sign in only when you want to
+              check in, join a room or create an availability alert.
+            </DialogDescription>
+          </DialogHeader>
+          <SignIn
+            hasSession={Boolean(userId)}
+            onComplete={async () => {
+              if (repository instanceof SupabaseRepository)
+                await repository.refresh();
+              setAuthOpen(false);
+            }}
+          />
         </DialogContent>
       </Dialog>
     </div>
