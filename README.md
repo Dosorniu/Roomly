@@ -61,9 +61,17 @@ The Supabase adapter implements the same RoomRepository contract. SQL RPCs enfor
 
 Shared authentication is passwordless. A visitor can browse every room before signing in. The first protected action opens the account dialog: email → one-time email verification → campus access code for a new approved account. Returning approved accounts skip the campus code. Supabase persists the browser session, so a fresh email code is not required on every visit. The private approved-email list remains the server-side university-access gate; the campus code can add a newly verified email to that list without exposing the list to the browser.
 
-The hosted project, PostgreSQL migrations, Realtime revision publication, public Worker URL and one verified owner account were connected on 2026-10-01. Before inviting a class-sized group, configure a custom SMTP provider and change both the Confirm signup and Magic Link/OTP email templates to display `{{ .Token }}`; see [the setup guide](docs/supabase-setup.md). The built-in Supabase mailer is intended only for limited testing.
+The hosted project, PostgreSQL migrations, Realtime revision publication and public Worker URL were connected on 2026-10-01. Custom SMTP is also configured with the project-only sender `Roomly <roomlysp@gmail.com>`. Both Confirm signup and Magic Link/OTP templates now send a numeric OTP, the live email OTP length is 6 digits, and OTP expiry is 900 seconds (15 minutes). A fresh test account completed the full hosted flow: email OTP → campus access code → approved account access.
 
-Administrators manage the catalog and campus access codes through Supabase, not a public admin UI. Access codes live only in the private database and are not committed to GitHub. Keep the committed display catalog and SQL room IDs/capacities in sync. Watches and in-app alerts are stored per account in shared mode. A booking calendar and push/email availability notifications are not included.
+For this university prototype, the current shared campus access code is intentionally documented in the repository so reviewers do not need a separate credential handoff:
+
+```text
+ROOMLY-CBS-7Q26
+```
+
+This code is only the Roomly campus-enrollment code. It is not a Supabase password, Gmail password, API key or service-role secret. If the repository is ever made broadly public, rotate/disable this code first.
+
+Administrators manage the catalog and campus access codes through Supabase, not a public admin UI. Keep the committed display catalog and SQL room IDs/capacities in sync. Watches and in-app alerts are stored per account in shared mode. A booking calendar and push/email availability notifications are not included.
 
 ## Portability and hosting
 

@@ -5,8 +5,9 @@ is live at `https://roomly.dosorniu.workers.dev` (2026-10-01). The core schema,
 27-room catalog and public-browsing/auth migration have been applied. One owner
 test account has completed hosted email verification successfully.
 
-Custom SMTP and OTP-only email templates are still a production gate before
-inviting a class-sized group.
+Custom SMTP and OTP-only email templates are configured and verified. The live
+project sends six-digit codes with a 15-minute expiry through the project-only
+sender `Roomly <roomlysp@gmail.com>`.
 
 ## Database migrations
 
@@ -73,10 +74,19 @@ email has already been approved.
 
 ## Campus access codes
 
-Invite codes are operational secrets/data, not source code. Do not commit a real
-classroom code to GitHub.
+For this university prototype, the current reviewer/student campus code is
+intentionally stored in the repository so the professor/team can recover it
+without a separate credential handoff:
 
-Create or rotate one in Supabase SQL, for example:
+```text
+ROOMLY-CBS-7Q26
+```
+
+This is only an enrollment code for Roomly. It is not an SMTP password, Supabase
+secret, API key or database credential. If this repository is ever made broadly
+public, rotate or disable the code first.
+
+Create or rotate a campus code in Supabase SQL, for example:
 
 ```sql
 insert into roomly_private.invite_codes(
@@ -93,8 +103,8 @@ set enabled=false
 where code='OLD-CODE';
 ```
 
-The live project currently has an active private classroom code provisioned in
-the database. It is intentionally absent from this repository.
+The live project currently has the documented classroom code provisioned and
+enabled in the database.
 
 ## Configure six-digit email OTP
 
@@ -120,23 +130,29 @@ The client accepts the six-digit code with `verifyOtp`. During transition, a
 working Supabase sign-in link can still establish the session if a legacy email
 template sends one.
 
-Set **Authentication → Providers → Email → Email OTP Expiration** to a short
-window appropriate for the demo. About 10–15 minutes is a reasonable classroom
-choice; Supabase recommends keeping OTP validity at one hour or less.
+The live project is configured with:
 
-## Custom SMTP before class-wide testing
+- **Email OTP length:** 6 digits
+- **Email OTP expiration:** 900 seconds (15 minutes)
+- **Minimum resend interval per user:** 60 seconds
 
-Do not rely on Supabase's built-in mailer for a classroom launch. Configure a
-custom SMTP provider in **Authentication → Emails → SMTP Settings** so normal
-student addresses can receive verification emails and the project has a usable
-auth-email rate limit.
+## Custom SMTP
 
-Keep SMTP credentials only in Supabase. They must never be added to the Roomly
-repository or browser environment.
+Custom SMTP is enabled in **Authentication → Emails → SMTP Settings** using the
+project-only Gmail sender:
 
-After custom SMTP is connected, review **Authentication → Rate Limits** before a
-presentation and make sure the configured email/OTP limits cover the expected
-number of students plus a few retries.
+```text
+Roomly <roomlysp@gmail.com>
+Host: smtp.gmail.com
+Port: 587
+```
+
+The Gmail App Password is stored only in Supabase SMTP settings and is not
+committed to GitHub. The ordinary Google account password is not used by Roomly.
+
+Before a larger presentation, review **Authentication → Rate Limits** and make
+sure the configured email/OTP limits cover the expected number of students plus
+a few retries.
 
 ## Authorization and transactions
 
@@ -163,9 +179,10 @@ Before a class demo:
 - public browser with no account can browse the 27 rooms,
 - public JSON/state contains no email or user IDs,
 - protected actions open the sign-in dialog,
-- a new email receives the six-digit OTP,
+- a new email receives a six-digit OTP from the Roomly project sender,
+- the OTP expires after 15 minutes,
 - a wrong campus code is rejected,
-- the correct campus code grants access once,
+- the documented code `ROOMLY-CBS-7Q26` grants access once,
 - a returning approved email skips campus-code enrollment,
 - two independent browsers/devices see the same room status,
 - A checks in, B sees and joins, A leaves, B becomes holder,

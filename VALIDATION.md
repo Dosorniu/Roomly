@@ -13,14 +13,22 @@
   `roomly_command(...)`.
 - Live anonymous snapshot returned only revision, sessions, empty memberships and
   room observations. No email addresses or user IDs are part of the public API.
-- One private campus invite code is provisioned in the hosted database. The code
-  itself is intentionally not committed to GitHub.
-- Custom SMTP and six-digit-only Confirm signup / Magic Link email templates are
-  still manual production gates before class-wide testing.
-- This branch adds automated database coverage for the public projection,
-  rejected invalid invite codes and successful verified access claiming.
-- Full branch CI and the final two-device acceptance scenario must pass before
-  this update is treated as presentation-ready.
+- One campus invite code is provisioned in the hosted database. For this
+  university prototype it is intentionally documented for reviewers:
+  `ROOMLY-CBS-7Q26`.
+- Custom SMTP is configured with the project-only sender
+  `Roomly <roomlysp@gmail.com>`.
+- Confirm signup and Magic Link/OTP templates both deliver numeric OTPs.
+- Live email OTP length is 6 digits and expiry is 900 seconds (15 minutes).
+- A fresh test account completed the full hosted authentication path:
+  email delivery → OTP verification → campus-code claim → approved Roomly access.
+- Automated database coverage passes for the public projection, rejected invalid
+  invite codes and successful verified access claiming.
+- PR #10 and the final `main` CI run passed TypeScript, lint, domain rules,
+  appearance contrast, PostgreSQL integration/concurrency, Chromium E2E,
+  production build and dependency audit.
+- The remaining acceptance task is only the explicit two-device live room-state
+  interaction test; hosted authentication itself is verified.
 
 ## Current checks — 2026-09-21
 

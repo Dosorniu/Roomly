@@ -98,8 +98,17 @@ Security / privacy:
 - Passwords are not collected by Roomly; Supabase email OTP/magic-link
   verification is used instead.
 
-Remaining production gate:
+Completed hosted-auth setup:
 
-- Configure custom SMTP before class-wide use and change both Confirm signup and
-  Magic Link/OTP templates to show the six-digit `{{ .Token }}`. The built-in
-  Supabase mailer remains suitable only for limited testing.
+- Configured custom SMTP with the project-only Gmail sender
+  `Roomly <roomlysp@gmail.com>`.
+- Updated both Confirm signup and Magic Link/OTP templates to send
+  `{{ .Token }}` instead of relying on a sign-in link.
+- Set live email OTP length to 6 digits and expiration to 900 seconds
+  (15 minutes).
+- Completed a fresh-account end-to-end test: email delivery → OTP verification →
+  campus access code → approved Roomly account access.
+- Documented the current university-prototype campus access code in the
+  repository for reviewers: `ROOMLY-CBS-7Q26`.
+- The Gmail App Password, Supabase secrets and service-role credentials remain
+  outside the repository.
