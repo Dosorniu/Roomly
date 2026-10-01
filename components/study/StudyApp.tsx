@@ -64,9 +64,6 @@ export function StudyApp({ roomId }: { roomId?: string }) {
 
   useEffect(() => repository.start(), []);
   useEffect(() => registerRoomTools(repository), []);
-  useEffect(() => {
-    if (sharedMode && accessGranted) setAuthOpen(false);
-  }, [accessGranted]);
 
   const views = rooms
     .filter((r) => r.enabled)
