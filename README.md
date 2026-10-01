@@ -3,10 +3,11 @@
 ## Current development status
 
 Roomly has two explicit modes. `demo` stores sample occupancy locally in the
-browser; `supabase` uses authenticated PostgreSQL RPCs, shared statuses and
-account-specific watches/alerts. Supabase integration is prepared but no hosted
-project is connected yet. Follow [the setup guide](docs/supabase-setup.md) before
-enabling it. The historical demo/backend notes below describe the original V1.
+browser; `supabase` is now connected to a hosted Supabase project and deployed at
+`https://roomly.dosorniu.workers.dev`. In shared mode, room availability is
+publicly readable without an account, while check-in, joining, session changes and
+availability watches require a verified passwordless account with campus access.
+The historical demo/backend notes below describe the original V1.
 
 Stable room/QR addresses now use `/rooms/<immutable-id>`. Existing hierarchical
 links are validated and redirected; unknown/disabled rooms return HTTP 404.
@@ -27,7 +28,7 @@ Use Node.js 22.13 or newer. From the project folder run `npm ci`, then `npm run 
 - `services/repository.ts`: replaceable RoomRepository interface and browser-local demo adapter.
 - `components/study/`: application shell, room cards, status badges, check-in dialog and room detail view.
 - `services/routes.ts`: immutable room ID links and validated legacy hierarchy redirects.
-- `services/supabase-repository.ts`: authenticated shared-state adapter; server rules live in `supabase/migrations`.
+- `services/supabase-repository.ts`: public read-only plus authenticated shared-state adapter; server rules live in `supabase/migrations`.
 - `services/webmcp.ts`: optional, feature-detected read-only browser tool using the same repository.
 - `app/`: thin route entrypoints. All business logic stays outside the framework layer.
 - `public/campus-illustration.jpg`: replaceable campus illustration; its path is in the building record.
@@ -56,11 +57,13 @@ Notifications are in-app only, watched per demo user. Watches persist locally; a
 
 ## Shared backend and administration
 
-The Supabase adapter implements the same RoomRepository contract. SQL RPCs enforce transactions, uniqueness of one active session per room and one active membership per student, capacity, server time, ownership and expiration. A Realtime revision stream plus polling refreshes authorized snapshots. The UI is not the authorization boundary. Connection and email setup are still required; see docs/supabase-setup.md.
+The Supabase adapter implements the same RoomRepository contract. SQL RPCs enforce transactions, uniqueness of one active session per room and one active membership per student, capacity, server time, ownership and expiration. A privacy-safe public snapshot exposes only room status, estimated end time and occupant count. It never exposes emails, memberships or student IDs. A Realtime revision stream plus a five-second recovery poll refreshes both public and signed-in views. The UI is not the authorization boundary.
 
-Supabase Auth verifies the account; a private approved-email list determines university access. No emails or other students' IDs appear in room projections. The old header-trusting auth helper is removed.
+Shared authentication is passwordless. A visitor can browse every room before signing in. The first protected action opens the account dialog: email → one-time email verification → campus access code for a new approved account. Returning approved accounts skip the campus code. Supabase persists the browser session, so a fresh email code is not required on every visit. The private approved-email list remains the server-side university-access gate; the campus code can add a newly verified email to that list without exposing the list to the browser.
 
-Administrators currently manage the catalog and approved emails through Supabase SQL, not a public admin UI. Keep the committed display catalog and SQL room IDs/capacities in sync. Watches and in-app alerts are stored per account in shared mode. A booking calendar and push/email availability notifications are not included.
+The hosted project, PostgreSQL migrations, Realtime revision publication, public Worker URL and one verified owner account were connected on 2026-10-01. Before inviting a class-sized group, configure a custom SMTP provider and change both the Confirm signup and Magic Link/OTP email templates to display `{{ .Token }}`; see [the setup guide](docs/supabase-setup.md). The built-in Supabase mailer is intended only for limited testing.
+
+Administrators manage the catalog and campus access codes through Supabase, not a public admin UI. Access codes live only in the private database and are not committed to GitHub. Keep the committed display catalog and SQL room IDs/capacities in sync. Watches and in-app alerts are stored per account in shared mode. A booking calendar and push/email availability notifications are not included.
 
 ## Portability and hosting
 
