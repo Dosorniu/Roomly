@@ -35,13 +35,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - name: Refresh security lockfile
-        run: |
-          npm install --package-lock-only --ignore-scripts
-          echo "ROOMLY_LOCK_B64_BEGIN"
-          base64 -w0 package-lock.json | fold -w 50000
-          echo
-          echo "ROOMLY_LOCK_B64_END"
       - name: Install locked dependencies
         run: npm ci
       - name: TypeScript
