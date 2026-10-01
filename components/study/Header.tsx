@@ -20,21 +20,32 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "./ThemeToggle";
+
 export function Header({
   userId,
+  accessGranted,
   onUser,
   onPanel,
   hasNotices,
   shared,
+  onSignIn,
   onSignOut,
 }: {
   shared: boolean;
-  onSignOut: () => void;
   userId: string;
+  accessGranted: boolean;
+  onSignIn: () => void;
+  onSignOut: () => void;
   onUser: (id: string) => void;
   onPanel: (panel: "help" | "notifications" | "appearance") => void;
   hasNotices: boolean;
 }) {
+  const accountLabel = !userId
+    ? "Sign in"
+    : accessGranted
+      ? "Sign out"
+      : "Complete access";
+
   return (
     <header className="topbar">
       <Link className="brand" href="/">
@@ -71,10 +82,9 @@ export function Header({
           {shared ? (
             <button
               className="secondary-button"
-              disabled={!userId}
-              onClick={onSignOut}
+              onClick={accessGranted ? onSignOut : onSignIn}
             >
-              {userId ? "Sign out" : "Student account"}
+              {accountLabel}
             </button>
           ) : (
             <Select value={userId} onValueChange={onUser}>
@@ -117,8 +127,10 @@ export function Header({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {shared ? (
-                <DropdownMenuItem disabled={!userId} onSelect={onSignOut}>
-                  Sign out
+                <DropdownMenuItem
+                  onSelect={accessGranted ? onSignOut : onSignIn}
+                >
+                  {accountLabel}
                 </DropdownMenuItem>
               ) : (
                 <>
