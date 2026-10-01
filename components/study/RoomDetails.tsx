@@ -19,6 +19,7 @@ import type { Command } from "@/services/domain";
 import { StatusBadge } from "./StatusBadge";
 import { CheckInModal } from "./CheckInModal";
 import { timeLabel } from "./RoomCard";
+
 export function RoomDetails({
   view,
   state,
@@ -28,9 +29,13 @@ export function RoomDetails({
   onWatch,
   now,
   shared,
+  canInteract,
+  onRequireAuth,
 }: {
   now: number;
   shared: boolean;
+  canInteract: boolean;
+  onRequireAuth: () => void;
   view: RoomView;
   state: StudyState;
   userId: string;
@@ -50,11 +55,20 @@ export function RoomDetails({
     );
   const holder = session?.holderId === userId;
   const other = state.memberships.some((m) => m.userId === userId) && !member;
+
+  const requireInteractionAccess = () => {
+    if (canInteract) return true;
+    onRequireAuth();
+    return false;
+  };
+
   const action = async (type: "join" | "leave") => {
+    if (!requireInteractionAccess()) return;
     setBusy(true);
     await onSubmit({ type, userId, roomId: room.id });
     setBusy(false);
   };
+
   return (
     <section className="detail-page">
       <Link href="/" className="back-link">
@@ -151,6 +165,14 @@ export function RoomDetails({
                     ? "This room is currently closed to additional participants."
                     : "Check the room in person before starting a session."}
           </p>
+
+          {shared && !canInteract && (
+            <p className="session-reminder">
+              Browsing is public. Sign in with a verified email to check in,
+              join rooms or create availability alerts.
+            </p>
+          )}
+
           {member && session && session.expectedEnd - now < 300000 && (
             <div className="session-reminder">
               Your session ends soon.{" "}
@@ -165,33 +187,43 @@ export function RoomDetails({
               here.
             </p>
           )}
+
           {!member && (status === "free" || status === "unknown") && (
             <button
               className="primary-button full"
-              disabled={other}
-              onClick={() => setModal("checkIn")}
+              disabled={canInteract && other}
+              onClick={() => {
+                if (requireInteractionAccess()) setModal("checkIn");
+              }}
             >
               <DoorOpen size={18} /> Check In
             </button>
           )}
+
           {!member && status === "share" && (
             <button
               className="primary-button full"
-              disabled={busy || other || count >= room.capacity}
+              disabled={
+                canInteract && (busy || other || count >= room.capacity)
+              }
               onClick={() => action("join")}
             >
               <Users size={18} />
               {count >= room.capacity ? "Room at capacity" : "Join Room"}
             </button>
           )}
+
           {holder && (
             <button
               className="primary-button full"
-              onClick={() => setModal("update")}
+              onClick={() => {
+                if (requireInteractionAccess()) setModal("update");
+              }}
             >
               <Pencil size={17} /> Update Status
             </button>
           )}
+
           {member && (
             <button
               className="secondary-button full"
@@ -201,16 +233,22 @@ export function RoomDetails({
               <LogOut size={17} /> Leave Room
             </button>
           )}
+
           {!member && status !== "free" && (
             <button
               className="secondary-button full"
-              aria-pressed={watching}
-              onClick={onWatch}
+              aria-pressed={canInteract ? watching : false}
+              onClick={() => {
+                if (requireInteractionAccess()) onWatch();
+              }}
             >
               <Bell size={17} />
-              {watching ? "Notification on" : "Notify me when free"}
+              {canInteract && watching
+                ? "Notification on"
+                : "Notify me when free"}
             </button>
           )}
+
           {member && (
             <p className="small-note">
               {holder
@@ -218,13 +256,15 @@ export function RoomDetails({
                 : "Leaving removes only you from this session."}
             </p>
           )}
+
           <div className="small-note session-disclaimer">
             {shared
-              ? "Student-reported estimates, not bookings. Changes are shared with your campus."
+              ? "Student-reported estimates, not bookings. Room status is public; room actions require a verified account."
               : "Student-reported estimates, not bookings. Demo changes are shared across tabs in this browser."}
           </div>
         </aside>
       </div>
+
       {modal && (
         <CheckInModal
           view={view}

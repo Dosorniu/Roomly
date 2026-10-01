@@ -29,12 +29,19 @@ await db.exec(
 await db.exec(
   readFileSync("supabase/migrations/202609210002_catalog.sql", "utf8"),
 );
+await db.exec(
+  readFileSync(
+    "supabase/migrations/202610010003_public_browse_auth.sql",
+    "utf8",
+  ),
+);
 const ids = [
   "00000000-0000-4000-8000-000000000001",
   "00000000-0000-4000-8000-000000000002",
   "00000000-0000-4000-8000-000000000003",
+  "00000000-0000-4000-8000-000000000004",
 ];
-for (let i = 0; i < ids.length; i++) {
+for (let i = 0; i < 3; i++) {
   await db.query("insert into auth.users values($1,$2,now())", [
     ids[i],
     `student${i}@example.test`,
@@ -44,6 +51,11 @@ for (let i = 0; i < ids.length; i++) {
     [`student${i}@example.test`],
   );
 }
+await db.query("insert into auth.users values($1,$2,now())", [
+  ids[3],
+  "newstudent@example.test",
+]);
+
 async function asUser(id, sql, args = []) {
   await db.query("select set_config('request.jwt.claim.sub',$1,false)", [
     id || "",
@@ -55,6 +67,16 @@ async function asUser(id, sql, args = []) {
     await db.exec("reset role");
   }
 }
+async function asAnon(sql, args = []) {
+  await db.query("select set_config('request.jwt.claim.sub','',false)");
+  await db.exec("set role anon");
+  try {
+    return await db.query(sql, args);
+  } finally {
+    await db.exec("reset role");
+  }
+}
+
 const command = (
   id,
   action,
@@ -72,7 +94,46 @@ const command = (
   ]);
 const snapshot = async (id) =>
   (await asUser(id, "select public.roomly_snapshot() as value")).rows[0].value;
+const publicSnapshot = async () =>
+  (await asAnon("select public.roomly_public_snapshot() as value")).rows[0]
+    .value;
+
 try {
+  const initialPublic = await publicSnapshot();
+  assert.equal(initialPublic.state.sessions.length, 0);
+  assert.equal(initialPublic.state.memberships.length, 0);
+  assert.equal(initialPublic.state.observations.length, 0);
+
+  assert.equal(
+    (
+      await asUser(
+        ids[3],
+        "select public.roomly_access_status() as allowed",
+      )
+    ).rows[0].allowed,
+    false,
+  );
+  await assert.rejects(
+    asUser(ids[3], "select public.roomly_claim_access($1)", ["WRONG-CODE"]),
+    /Invalid or expired campus access code/,
+  );
+  await db.query(
+    "insert into roomly_private.invite_codes(code,university_id,max_uses) values($1,'cbs',10)",
+    ["TEST-CAMPUS-CODE"],
+  );
+  await asUser(ids[3], "select public.roomly_claim_access($1)", [
+    "TEST-CAMPUS-CODE",
+  ]);
+  assert.equal(
+    (
+      await asUser(
+        ids[3],
+        "select public.roomly_access_status() as allowed",
+      )
+    ).rows[0].allowed,
+    true,
+  );
+  assert.equal((await snapshot(ids[3])).userId, ids[3]);
   if (databaseUrl) {
     // Independent database connections genuinely race for the last available room.
     async function race(id) {
@@ -133,6 +194,13 @@ try {
   assert.equal(privateView.state.sessions[0].occupantCount, 2);
   assert.deepEqual(privateView.state.memberships, []);
   assert.ok(!JSON.stringify(privateView).includes(ids[0]));
+
+  const publicView = await publicSnapshot();
+  assert.equal(publicView.state.sessions[0].holderId, "");
+  assert.equal(publicView.state.sessions[0].occupantCount, 2);
+  assert.deepEqual(publicView.state.memberships, []);
+  assert.ok(!JSON.stringify(publicView).includes(ids[0]));
+  assert.ok(!JSON.stringify(publicView).includes("student0@example.test"));
   await asUser(ids[2], "select public.roomly_watch($1,true)", ["118"]);
   await command(ids[0], "leave", "118");
   assert.equal((await snapshot(ids[1])).state.sessions[0].holderId, ids[1]);
@@ -176,7 +244,7 @@ try {
   ]);
   await assert.rejects(snapshot(ids[1]), /approved, verified/);
   console.log(
-    "PASS: database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation.",
+    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation.",
   );
 } finally {
   await db.close();
