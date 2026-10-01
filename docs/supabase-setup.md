@@ -1,75 +1,183 @@
 # Shared Roomly setup
 
-Status: integration code and migrations are prepared. No hosted Supabase project
-has been created or connected, and real email delivery / hosted Realtime have not
-been verified yet. The default remains an explicitly local demo.
+Status: the hosted Supabase project is connected and the production Roomly Worker
+is live at `https://roomly.dosorniu.workers.dev` (2026-10-01). The core schema,
+27-room catalog and public-browsing/auth migration have been applied. One owner
+test account has completed hosted email verification successfully.
 
-## Create and configure the project
+Custom SMTP and OTP-only email templates are still a production gate before
+inviting a class-sized group.
 
-1. Create a Supabase project in your own account. Keep its database password and
-   secret/service-role keys outside the repository and chat.
-2. Run the SQL files in `supabase/migrations` in filename order using the SQL
-   editor (or `supabase db push` from an authenticated CLI). They create the
-   private hierarchy, rooms, sessions, memberships, allowlist, watches and alerts.
-   The catalog is still 27 sample rooms; new shared availability starts Unknown.
-3. Add only agreed student emails through the SQL editor, for example:
-   `insert into roomly_private.allowed_students(email, university_id) values ('student@example.edu', 'cbs');`
-   Use lowercase real addresses. Registration does not grant room access until
-   the email is verified and present in this allowlist. Removing it revokes RPC
-   access. No real emails are seeded or committed.
-4. In Authentication, enable email login and email confirmation. Set the Site URL
-   to the local preview URL for testing and eventually your deployed URL. Configure
-   permitted redirect URLs. For a code-based sign-in flow, set the Magic Link email
-   template to include `{{ .Token }}`. Default magic links are also accepted by the
-   client, provided the redirect URL is correct. Use a configured SMTP provider
-   before inviting actual students; default email sending has provider limits.
-5. Copy `.env.example` to an ignored `.env.local`. Set
-   `NEXT_PUBLIC_ROOMLY_MODE=supabase`, the project URL and **publishable key**
-   (legacy anon key also works). Never use the secret/service-role key. Restart
-   the dev server or rebuild after changing these build-time public variables.
-6. The migration publishes only `public.roomly_revision` to `supabase_realtime`.
-   Enable/check that publication in the dashboard. The app subscribes to revision
-   changes and refetches its authorized projection. A five-second poll and a focus
-   refresh recover missed/disconnected events.
-7. Optional cleanup: enable pg_cron and schedule
-   `select cron.schedule('roomly-expiration', '* * * * *', 'select roomly_private.expire_sessions()');`.
-   Every read/command also expires sessions using server time, so stale sessions
-   are never returned as occupied even without this maintenance job.
+## Database migrations
+
+Run the committed SQL files in filename order on a fresh project:
+
+1. `supabase/migrations/202609210001_roomly.sql`
+2. `supabase/migrations/202609210002_catalog.sql`
+3. `supabase/migrations/202610010003_public_browse_auth.sql`
+
+The migrations create:
+
+- private university/building/room hierarchy and occupancy data,
+- authenticated check-in/join/leave/update RPCs,
+- account watches and durable in-app availability alerts,
+- privacy-safe public room snapshots,
+- a public Realtime revision counter,
+- private campus invite codes and self-service access claiming.
+
+Private tables live in `roomly_private`. Browser roles do not receive direct
+schema/table access. The browser talks to the database only through the intended
+public RPC surface.
+
+## Production URLs and client variables
+
+Production Site URL:
+
+`https://roomly.dosorniu.workers.dev`
+
+Supabase Authentication URL Configuration should use the production Worker URL
+as the Site URL and include the Worker origin in the allowed redirect URLs.
+
+The client requires only public values:
+
+```env
+NEXT_PUBLIC_ROOMLY_MODE=supabase
+NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
+
+Never put a secret/service-role key or database password in browser variables,
+GitHub, Cloudflare build variables intended for the client, or documentation.
+
+## Visitor and account flow
+
+Shared mode deliberately separates browsing from interaction.
+
+1. A signed-out visitor opens Roomly and calls `roomly_public_snapshot()`.
+   They can see room status, occupant count and estimated session end.
+2. The public projection contains no emails, user IDs or membership rows.
+3. Check-in, Join, Update, Leave and Watch are protected actions.
+4. A protected action opens the passwordless sign-in dialog.
+5. The visitor enters an email and Supabase sends a one-time verification email.
+6. The client verifies the six-digit OTP with `verifyOtp(..., type: "email")`.
+7. Returning approved users continue immediately.
+8. A newly verified user enters the shared campus access code once.
+   `roomly_claim_access()` validates the private code and adds that verified
+   email to `roomly_private.allowed_students`.
+9. Supabase persists the browser session, so the user normally does not need a
+   new email code every time they reopen Roomly on the same browser/device.
+
+A different browser/device has its own Supabase session and therefore performs
+email verification separately. The campus code is not needed again after the
+email has already been approved.
+
+## Campus access codes
+
+Invite codes are operational secrets/data, not source code. Do not commit a real
+classroom code to GitHub.
+
+Create or rotate one in Supabase SQL, for example:
+
+```sql
+insert into roomly_private.invite_codes(
+  code, university_id, enabled, max_uses
+)
+values ('REPLACE-WITH-A-SHARED-CODE', 'cbs', true, 100);
+```
+
+Disable an old code without deleting approved student accounts:
+
+```sql
+update roomly_private.invite_codes
+set enabled=false
+where code='OLD-CODE';
+```
+
+The live project currently has an active private classroom code provisioned in
+the database. It is intentionally absent from this repository.
+
+## Configure six-digit email OTP
+
+Roomly already sends and verifies email OTP requests in the client. Supabase
+chooses whether the email shows a link or a code from the email template content.
+
+In **Authentication → Email Templates**, update both templates used by new and
+returning users:
+
+- **Confirm signup**
+- **Magic Link / OTP**
+
+Include `{{ .Token }}` in both, for example:
+
+```html
+<h2>Your Roomly sign-in code</h2>
+<p>Enter this six-digit code in Roomly:</p>
+<p><strong>{{ .Token }}</strong></p>
+<p>This code expires shortly and can be used only once.</p>
+```
+
+The client accepts the six-digit code with `verifyOtp`. During transition, a
+working Supabase sign-in link can still establish the session if a legacy email
+template sends one.
+
+Set **Authentication → Providers → Email → Email OTP Expiration** to a short
+window appropriate for the demo. About 10–15 minutes is a reasonable classroom
+choice; Supabase recommends keeping OTP validity at one hour or less.
+
+## Custom SMTP before class-wide testing
+
+Do not rely on Supabase's built-in mailer for a classroom launch. Configure a
+custom SMTP provider in **Authentication → Emails → SMTP Settings** so normal
+student addresses can receive verification emails and the project has a usable
+auth-email rate limit.
+
+Keep SMTP credentials only in Supabase. They must never be added to the Roomly
+repository or browser environment.
+
+After custom SMTP is connected, review **Authentication → Rate Limits** before a
+presentation and make sure the configured email/OTP limits cover the expected
+number of students plus a few retries.
 
 ## Authorization and transactions
 
-`roomly_snapshot`, `roomly_command` and `roomly_watch` are the API surface. They
-are PostgreSQL functions exposed through Supabase RPC; a second web API server is
-unnecessary. Only the authenticated role can call them. The actor comes from
-`auth.uid()` and a confirmed entry in `auth.users`, never a browser-supplied user ID
-or an OpenAI HTTP header. Functions use an empty search_path and fully qualified
-relations. Private tables have no browser grants and are outside exposed schemas.
+`roomly_public_snapshot()` is the anonymous read-only API. It returns only a
+privacy-safe projection.
+
+`roomly_snapshot()`, `roomly_command()` and `roomly_watch()` are the
+approved-account API surface. The actor comes from `auth.uid()` and a confirmed
+entry in `auth.users`; browser-supplied user IDs are ignored for authorization.
 
 Occupancy commands execute in one transaction under an advisory lock. Unique
-constraints enforce one active session per room and one membership per user;
-capacity, duration, sharing and holder permissions are checked in SQL. V1 uses
-one short global occupancy lock for predictable correctness at small campus scale.
-Larger deployments should use ordered room/user locks after load testing.
+constraints enforce one active session per room and one membership per user.
+Capacity, duration, sharing and holder permissions are checked in SQL.
 
-Snapshots expose counts, session times, the caller's membership and whether that
-caller is holder. They do not expose other students' IDs or emails. Watches and
-notifications are account-specific. The last leave creates durable alerts for
-watchers; expiration creates Unknown and sends no false Free alert. Alerts are
-retained for 30 days (latest 50 displayed). These are in-app alerts, not push/email.
+Only `public.roomly_revision` is published to Supabase Realtime. Anonymous and
+approved clients may subscribe to that counter; after a revision change they
+refetch the appropriate projection. A five-second poll and focus refresh recover
+missed/disconnected events.
 
-## Verification before enabling shared use
+## Hosted verification checklist
 
-- Run lint, TypeScript, domain/routes, database and E2E checks, then build.
-- Add two test email addresses to the allowlist and sign in from independent
-  browsers/devices. A checks in, B sees and joins, A leaves, B becomes holder,
-  B leaves, and an account watching the room receives an alert after reconnecting.
-- Try an unapproved email and a non-holder update: both must be rejected.
-- Verify the deployed CSP permits only your Supabase HTTPS/WebSocket origin and
-  the realtime subscription connects. Client configuration must not contain secrets.
-- Keep real student deployment off until these hosted tests pass. Demo browser
-  data is intentionally not copied into the shared database.
+Before a class demo:
 
-References: [Supabase Auth](https://supabase.com/docs/guides/auth/auth-email-passwordless),
-[database functions](https://supabase.com/docs/guides/database/functions),
+- public browser with no account can browse the 27 rooms,
+- public JSON/state contains no email or user IDs,
+- protected actions open the sign-in dialog,
+- a new email receives the six-digit OTP,
+- a wrong campus code is rejected,
+- the correct campus code grants access once,
+- a returning approved email skips campus-code enrollment,
+- two independent browsers/devices see the same room status,
+- A checks in, B sees and joins, A leaves, B becomes holder,
+- B leaves and the room becomes Free,
+- a watching account receives the in-app alert after reconnecting,
+- an anonymous client cannot call mutation RPCs,
+- a non-holder cannot update another holder's session,
+- deployed CSP permits the configured Supabase HTTPS/WebSocket origin,
+- no secret/service-role key appears in the browser bundle or GitHub.
+
+References: [Supabase passwordless email auth](https://supabase.com/docs/guides/auth/auth-email-passwordless),
+[email templates](https://supabase.com/docs/guides/auth/auth-email-templates),
+[SMTP](https://supabase.com/docs/guides/auth/auth-smtp),
 [Realtime](https://supabase.com/docs/guides/realtime/postgres-changes),
 [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
