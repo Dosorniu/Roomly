@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getSupabase } from "@/services/supabase-client";
 
 type Stage = "email" | "otp" | "access";
@@ -18,10 +18,6 @@ export function SignIn({
   const [stage, setStage] = useState<Stage>(hasSession ? "access" : "email");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (hasSession) setStage("access");
-  }, [hasSession]);
 
   async function resetIdentity() {
     setBusy(true);
