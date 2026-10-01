@@ -1,5 +1,27 @@
 # V1 validation
 
+## Hosted shared deployment — 2026-10-01
+
+- Supabase project is ACTIVE_HEALTHY on the Free plan and connected to the
+  production Worker at `https://roomly.dosorniu.workers.dev`.
+- Core, catalog and public-browsing/auth migrations are applied in the hosted
+  database. The live catalog contains 27 rooms.
+- Hosted Auth email delivery was exercised successfully with the owner test
+  account; the email is confirmed and approved.
+- `public.roomly_revision` is published to Supabase Realtime.
+- Anonymous role can execute `roomly_public_snapshot()` and cannot execute
+  `roomly_command(...)`.
+- Live anonymous snapshot returned only revision, sessions, empty memberships and
+  room observations. No email addresses or user IDs are part of the public API.
+- One private campus invite code is provisioned in the hosted database. The code
+  itself is intentionally not committed to GitHub.
+- Custom SMTP and six-digit-only Confirm signup / Magic Link email templates are
+  still manual production gates before class-wide testing.
+- This branch adds automated database coverage for the public projection,
+  rejected invalid invite codes and successful verified access claiming.
+- Full branch CI and the final two-device acceptance scenario must pass before
+  this update is treated as presentation-ready.
+
 ## Current checks — 2026-09-21
 
 - Lint: 0 errors; two advisory warnings remain for locally supplied img assets.
