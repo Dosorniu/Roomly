@@ -39,6 +39,9 @@ export interface User {
 }
 export interface RoomSession {
   occupantCount?: number;
+  // Display names of occupants, present only for rooms open to sharing and only in
+  // the authenticated snapshot. Empty for non-shared rooms and the public view.
+  occupants?: string[];
   id: string;
   roomId: string;
   holderId: string;
@@ -68,4 +71,13 @@ export interface RoomView {
   count: number;
   session?: RoomSession;
   updatedAt: number;
+}
+export interface Booking {
+  id: string;
+  startsAt: number;
+  endsAt: number;
+  mine: boolean;
+  // Short display name of who booked the slot ("You" for the actor's own).
+  // Visible to signed-in students only; never includes an email address.
+  by: string;
 }

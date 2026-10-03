@@ -1,5 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import assert from "node:assert/strict";
 import pg from "pg";
 
@@ -23,18 +23,13 @@ await db.exec(`create role anon; create role authenticated; create schema auth;
 create table auth.users(id uuid primary key, email text, email_confirmed_at timestamptz);
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 grant usage on schema auth to authenticated,anon; grant execute on function auth.uid() to authenticated,anon;`);
-await db.exec(
-  readFileSync("supabase/migrations/202609210001_roomly.sql", "utf8"),
-);
-await db.exec(
-  readFileSync("supabase/migrations/202609210002_catalog.sql", "utf8"),
-);
-await db.exec(
-  readFileSync(
-    "supabase/migrations/202610010003_public_browse_auth.sql",
-    "utf8",
-  ),
-);
+// Apply every migration in order, so CI exercises the full chain including
+// later additions (auth hardening, bookings) exactly as the hosted project does.
+for (const file of readdirSync("supabase/migrations")
+  .filter((f) => f.endsWith(".sql"))
+  .sort()) {
+  await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
+}
 const ids = [
   "00000000-0000-4000-8000-000000000001",
   "00000000-0000-4000-8000-000000000002",
@@ -194,6 +189,14 @@ try {
   assert.equal(privateView.state.sessions[0].occupantCount, 2);
   assert.deepEqual(privateView.state.memberships, []);
   assert.ok(!JSON.stringify(privateView).includes(ids[0]));
+  // 118 is open to sharing: signed-in students see WHO is there (display names,
+  // never emails), ordered by join time.
+  assert.deepEqual(
+    privateView.state.sessions[0].occupants,
+    ["Student0", "Student1"],
+    "share rooms expose occupant display names to signed-in students",
+  );
+  assert.ok(!JSON.stringify(privateView).includes("@example.test"));
 
   const publicView = await publicSnapshot();
   assert.equal(publicView.state.sessions[0].holderId, "");
@@ -201,6 +204,11 @@ try {
   assert.deepEqual(publicView.state.memberships, []);
   assert.ok(!JSON.stringify(publicView).includes(ids[0]));
   assert.ok(!JSON.stringify(publicView).includes("student0@example.test"));
+  // The public projection never carries occupant names, for shared rooms or otherwise.
+  assert.ok(
+    !JSON.stringify(publicView).includes("Student0"),
+    "public snapshot never reveals occupant names",
+  );
   await asUser(ids[2], "select public.roomly_watch($1,true)", ["118"]);
   await command(ids[0], "leave", "118");
   assert.equal((await snapshot(ids[1])).state.sessions[0].holderId, ids[1]);
@@ -214,6 +222,13 @@ try {
   );
   assert.equal((await snapshot(ids[0])).notices.length, 0);
   await command(ids[0], "checkIn", "118", 1, false);
+  // A non-shared session keeps occupancy anonymous — only a count, no names.
+  assert.deepEqual(
+    (await snapshot(ids[0])).state.sessions.find((s) => s.roomId === "118")
+      .occupants,
+    [],
+    "non-shared rooms never list occupant names",
+  );
   await assert.rejects(command(ids[1], "join", "118"), /no longer open/);
   await assert.rejects(command(ids[0], "update", "118", 481, true), /duration/);
   await assert.rejects(
@@ -243,8 +258,96 @@ try {
     "student1@example.test",
   ]);
   await assert.rejects(snapshot(ids[1]), /approved, verified/);
+
+  // Bookings: reserve, overlap rejection, privacy, ownership on cancel.
+  const bk1 = "00000000-0000-4000-8000-0000000000b1";
+  const bk2 = "00000000-0000-4000-8000-0000000000b2";
+  await db.query(
+    "insert into auth.users(id,email,email_confirmed_at) values ($1,'bk1@example.test',now()),($2,'bk2@example.test',now())",
+    [bk1, bk2],
+  );
+  await db.query(
+    "insert into roomly_private.allowed_students(email,university_id) values ('bk1@example.test','cbs'),('bk2@example.test','cbs')",
+  );
+  const bh = (n) => Date.now() + n * 3600000;
+  const rid = (
+    await asUser(bk1, "select public.roomly_reserve('112',$1,$2) as id", [
+      bh(24),
+      bh(26),
+    ])
+  ).rows[0].id;
+  assert.ok(rid, "reserve returns a booking id");
+  await assert.rejects(
+    asUser(bk2, "select public.roomly_reserve('112',$1,$2)", [bh(25), bh(27)]),
+    /already booked/,
+    "overlapping slot must be rejected",
+  );
+  await assert.rejects(
+    asAnon("select public.roomly_bookings('112')"),
+    /./,
+    "anonymous users cannot read the booking calendar",
+  );
+  const cal = (await asUser(bk1, "select public.roomly_bookings('112') as v"))
+    .rows[0].v;
+  assert.ok(
+    Array.isArray(cal) && cal.length === 1 && cal[0].mine === true,
+    "calendar returns the student's own booking, flagged mine",
+  );
+  assert.equal(cal[0].by, "You", "the actor's own booking reads back as You");
+  assert.ok(
+    !JSON.stringify(cal).includes("example.test") &&
+      !JSON.stringify(cal).includes("userId"),
+    "booking payload exposes no identities",
+  );
+  // A different signed-in student sees the booker's derived display name, never email.
+  const calOther = (
+    await asUser(bk2, "select public.roomly_bookings('112') as v")
+  ).rows[0].v;
+  assert.equal(
+    calOther[0].by,
+    "Bk1",
+    "other students see a short display name for the booker",
+  );
+  assert.equal(calOther[0].mine, false);
+  assert.ok(
+    !JSON.stringify(calOther).includes("@") &&
+      !JSON.stringify(calOther).includes("example.test"),
+    "display name never leaks the email address",
+  );
+  // Dotted campus emails derive a "F. Last" display name.
+  const dot = "00000000-0000-4000-8000-0000000000d1";
+  await db.query(
+    "insert into auth.users(id,email,email_confirmed_at) values ($1,'mariia.romanko@example.test',now())",
+    [dot],
+  );
+  await db.query(
+    "insert into roomly_private.allowed_students(email,university_id) values ('mariia.romanko@example.test','cbs')",
+  );
+  await asUser(dot, "select public.roomly_reserve('112',$1,$2)", [
+    bh(48),
+    bh(49),
+  ]);
+  const calDot = (await asUser(bk2, "select public.roomly_bookings('112') as v"))
+    .rows[0].v;
+  assert.ok(
+    calDot.some((b) => b.by === "M. Romanko"),
+    "dotted emails derive a First-initial Last display name",
+  );
+  await assert.rejects(
+    asUser(bk2, "select public.roomly_cancel_booking($1)", [rid]),
+    /your own/,
+    "only the owner can cancel a booking",
+  );
+  await asUser(bk1, "select public.roomly_cancel_booking($1)", [rid]);
+  const cal2 = (await asUser(bk2, "select public.roomly_bookings('112') as v"))
+    .rows[0].v;
+  assert.ok(
+    !cal2.some((b) => b.id === rid),
+    "cancelled booking is removed",
+  );
+
   console.log(
-    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation.",
+    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation, bookings (reserve, overlap, privacy, cancel).",
   );
 } finally {
   await db.close();

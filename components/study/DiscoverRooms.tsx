@@ -20,6 +20,7 @@ import { BuildingHeroVisual } from "./BuildingHeroVisual";
 import { RoomCard } from "./RoomCard";
 interface Props {
   views: RoomView[];
+  allViews: RoomView[];
   query: string;
   onQuery: (s: string) => void;
   status: Status | "all";
@@ -91,7 +92,11 @@ export function DiscoverRooms(p: Props) {
           ))}
         </div>
       </section>
-      <BuildingHeroVisual />
+      <BuildingHeroVisual
+        views={p.allViews}
+        onStatus={p.onStatus}
+        activeStatus={p.status}
+      />
       <section className="room-section" id="rooms">
         <div className="section-title">
           <h2>{title}</h2>

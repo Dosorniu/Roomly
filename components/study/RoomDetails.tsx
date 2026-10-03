@@ -13,11 +13,12 @@ import {
   DoorOpen,
   Check,
 } from "lucide-react";
-import { floors, buildings } from "@/data/catalog";
+import { floors, buildings, users } from "@/data/catalog";
 import type { RoomView, StudyState } from "@/types/domain";
 import type { Command } from "@/services/domain";
 import { StatusBadge } from "./StatusBadge";
 import { CheckInModal } from "./CheckInModal";
+import { BookingCalendar } from "./BookingCalendar";
 import { timeLabel } from "./RoomCard";
 
 export function RoomDetails({
@@ -55,6 +56,23 @@ export function RoomDetails({
     );
   const holder = session?.holderId === userId;
   const other = state.memberships.some((m) => m.userId === userId) && !member;
+
+  // Who is currently in a Share room. Shown only to signed-in students (the public
+  // view never carries names). Prefer the server-provided display names; fall back to
+  // the demo catalog in local mode.
+  const canView = !shared || canInteract;
+  const occupantNames: string[] =
+    session && session.openToShare && canView
+      ? session.occupants && session.occupants.length > 0
+        ? session.occupants
+        : state.memberships
+            .filter((m) => m.sessionId === session.id)
+            .map((m) =>
+              m.userId === userId
+                ? "You"
+                : (users.find((u) => u.id === m.userId)?.displayName ?? "Student"),
+            )
+      : [];
 
   const requireInteractionAccess = () => {
     if (canInteract) return true;
@@ -112,6 +130,18 @@ export function RoomDetails({
               </span>
             </div>
           </div>
+          {status === "share" && occupantNames.length > 0 && (
+            <div className="occupants">
+              <h2>Who’s here</h2>
+              <div className="occupant-chips">
+                {occupantNames.map((n, i) => (
+                  <span key={i} className="occupant-chip">
+                    <Users size={14} /> {n}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           <h2>In this space</h2>
           <div className="amenities">
             {room.features.map((f) => (
@@ -264,6 +294,13 @@ export function RoomDetails({
           </div>
         </aside>
       </div>
+
+      <BookingCalendar
+        roomId={room.id}
+        shared={shared}
+        canInteract={canInteract}
+        onRequireAuth={onRequireAuth}
+      />
 
       {modal && (
         <CheckInModal
