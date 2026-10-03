@@ -1,7 +1,7 @@
 export const appearanceOptions = {
   palette: [
     { value: "original", label: "Original", description: "Minimal & neutral" },
-    { value: "cbs", label: "CBS-inspired", description: "Purple & soft green" },
+    { value: "cbs", label: "Campus", description: "Black & lime" },
   ],
   mode: [
     { value: "light", label: "Light" },
@@ -24,8 +24,8 @@ export type Appearance = {
   ]: (typeof appearanceOptions)[K][number]["value"];
 };
 export const defaultAppearance: Appearance = {
-  palette: "original",
-  mode: "light",
+  palette: "cbs",
+  mode: "dark",
   textSize: "standard",
   fontWeight: "regular",
 };

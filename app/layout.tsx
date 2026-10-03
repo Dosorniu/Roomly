@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Script from "next/script";
+import { Figtree } from "next/font/google";
 import "./globals.css";
 import { AppTheme } from "@/components/study/AppTheme";
+
+const figtree = Figtree({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-figtree",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Roomly · Room Finder",
@@ -24,7 +32,7 @@ export default async function RootLayout({
 }>) {
   const nonce = (await headers()).get("x-nonce") || undefined;
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={figtree.variable}>
       <head>
         <Script
           src="/appearance-init.js"
