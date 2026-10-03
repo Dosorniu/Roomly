@@ -239,6 +239,7 @@ export function StudyApp({ roomId }: { roomId?: string }) {
             )}
             <DiscoverRooms
               views={filtered}
+              allViews={views}
               query={query}
               onQuery={setQuery}
               status={status}
@@ -256,7 +257,16 @@ export function StudyApp({ roomId }: { roomId?: string }) {
 
         <footer>
           <span>Roomly · Room Finder</span>
-          <span>Student prototype · Demonstration data</span>
+          <span>
+            Student prototype · Demonstration data ·{" "}
+            <Link href="/help" className="footer-link">
+              Guide
+            </Link>{" "}
+            ·{" "}
+            <Link href="/privacy" className="footer-link">
+              Privacy policy
+            </Link>
+          </span>
         </footer>
       </main>
 

@@ -36,7 +36,9 @@ export function isStudyState(value: unknown): value is StudyState {
         s.expectedEnd > s.startedAt &&
         typeof s.openToShare === "boolean" &&
         (s.occupantCount === undefined ||
-          (Number.isInteger(s.occupantCount) && Number(s.occupantCount) >= 0)),
+          (Number.isInteger(s.occupantCount) && Number(s.occupantCount) >= 0)) &&
+        (s.occupants === undefined ||
+          (Array.isArray(s.occupants) && s.occupants.every(text))),
     ) &&
     memberships.every(
       (m) =>
