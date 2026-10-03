@@ -74,17 +74,10 @@ email has already been approved.
 
 ## Campus access codes
 
-For this university prototype, the current reviewer/student campus code is
-intentionally stored in the repository so the professor/team can recover it
-without a separate credential handoff:
-
-```text
-ROOMLY-CBS-7Q26
-```
-
-This is only an enrollment code for Roomly. It is not an SMTP password, Supabase
-secret, API key or database credential. If this repository is ever made broadly
-public, rotate or disable the code first.
+Access is granted by university email domain. A verified `@cbs-mail.de` address
+is approved automatically with no code. Reviewers and team members without a
+university address receive personal single-use codes, provisioned in Supabase
+and never stored in the repository. The earlier shared code has been disabled.
 
 Create or rotate a campus code in Supabase SQL, for example:
 
@@ -181,9 +174,10 @@ Before a class demo:
 - protected actions open the sign-in dialog,
 - a new email receives a six-digit OTP from the Roomly project sender,
 - the OTP expires after 15 minutes,
-- a wrong campus code is rejected,
-- the documented code `ROOMLY-CBS-7Q26` grants access once,
-- a returning approved email skips campus-code enrollment,
+- a wrong guest code is rejected,
+- a verified `@cbs-mail.de` address is approved automatically,
+- a personal single-use guest code grants access once, then is spent,
+- a returning approved email skips the code step,
 - two independent browsers/devices see the same room status,
 - A checks in, B sees and joins, A leaves, B becomes holder,
 - B leaves and the room becomes Free,
