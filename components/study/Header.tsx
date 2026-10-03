@@ -55,12 +55,15 @@ export function Header({
         <span>Roomly</span>
       </Link>
       <nav className="header-actions" aria-label="Main navigation">
-        <Link className="nav-link" href="/#building">
-          Building
+        <Link className="nav-link" href="/">
+          Rooms
         </Link>
-        <button className="nav-link" onClick={() => onPanel("help")}>
-          About
-        </button>
+        <Link className="nav-link" href="/help">
+          Guide
+        </Link>
+        <Link className="nav-link" href="/privacy">
+          Privacy
+        </Link>
         <span className="nav-divider" />
         <ThemeToggle />
         <button
@@ -114,13 +117,16 @@ export function Header({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href="/#building">Building</Link>
+                <Link href="/">Rooms</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/help">Guide</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/privacy">Privacy</Link>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => onPanel("appearance")}>
                 Appearance
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onPanel("help")}>
-                About this prototype
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => onPanel("notifications")}>
                 Availability notifications

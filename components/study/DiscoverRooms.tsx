@@ -1,6 +1,16 @@
 "use client";
 import { useState } from "react";
-import { ArrowRight, Search, SlidersHorizontal, X } from "lucide-react";
+import {
+  ArrowRight,
+  Search,
+  SlidersHorizontal,
+  X,
+  Zap,
+  ArrowLeftRight,
+  VolumeX,
+  Users,
+  Layers,
+} from "lucide-react";
 import { floors, rooms } from "@/data/catalog";
 import type { RoomView, Status } from "@/types/domain";
 import {
@@ -16,11 +26,9 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/components/ui/empty";
-import { BuildingHeroVisual } from "./BuildingHeroVisual";
 import { RoomCard } from "./RoomCard";
 interface Props {
   views: RoomView[];
-  allViews: RoomView[];
   query: string;
   onQuery: (s: string) => void;
   status: Status | "all";
@@ -48,18 +56,73 @@ export function DiscoverRooms(p: Props) {
       : p.status === "share"
         ? "Open to Share"
         : "All study spaces";
-  const primary = [
-    { value: "free", label: "Free now" },
-    { value: "share", label: "Open to Share" },
-    { value: "all", label: "All rooms" },
-  ] as const;
+  // Single-select quick filters — tapping one clears the rest; tapping the active
+  // one clears back to all. "Floors" opens the detailed filters (floor picker).
+  const pick = (isActive: boolean, apply: () => void) => () => {
+    p.onReset();
+    if (!isActive) apply();
+  };
+  const quickActions = [
+    {
+      key: "free",
+      label: "Free now",
+      Icon: Zap,
+      active: p.status === "free",
+      onClick: pick(p.status === "free", () => p.onStatus("free")),
+    },
+    {
+      key: "share",
+      label: "To share",
+      Icon: ArrowLeftRight,
+      active: p.status === "share",
+      onClick: pick(p.status === "share", () => p.onStatus("share")),
+    },
+    {
+      key: "quiet",
+      label: "Quiet",
+      Icon: VolumeX,
+      active: p.type === "Quiet space",
+      onClick: pick(p.type === "Quiet space", () => p.onType("Quiet space")),
+    },
+    {
+      key: "group",
+      label: "Group",
+      Icon: Users,
+      active: p.capacity === "6",
+      onClick: pick(p.capacity === "6", () => p.onCapacity("6")),
+    },
+    {
+      key: "floors",
+      label: "Floors",
+      Icon: Layers,
+      active: expanded || p.floor !== "all",
+      onClick: () => setExpanded((v) => !v),
+    },
+  ];
   return (
     <div className="discovery-layout">
+      <div className="quick-actions" aria-label="Quick filters">
+        {quickActions.map((a) => (
+          <button
+            key={a.key}
+            type="button"
+            className={`quick-action${a.active ? " active" : ""}`}
+            aria-pressed={a.active}
+            onClick={a.onClick}
+          >
+            <span className="qa-circle">
+              <a.Icon size={24} strokeWidth={2.4} />
+            </span>
+            <span className="qa-label">{a.label}</span>
+          </button>
+        ))}
+      </div>
       <section className="discovery-intro">
         <span className="eyebrow">YOUR CAMPUS, AT A GLANCE</span>
         <h1>Find your study space.</h1>
         <p className="intro-description">
-          A quick and easy way to find a free or shared room on campus.
+          See which rooms are free, shared or bookable on campus right now — and
+          reserve a slot ahead of time.
         </p>
         <div className="search-box">
           <Search size={21} />
@@ -79,24 +142,7 @@ export function DiscoverRooms(p: Props) {
             </button>
           )}
         </div>
-        <div className="primary-pills" aria-label="Room status">
-          {primary.map((s) => (
-            <button
-              key={s.value}
-              className={p.status === s.value ? "selected" : ""}
-              aria-pressed={p.status === s.value}
-              onClick={() => p.onStatus(s.value)}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
       </section>
-      <BuildingHeroVisual
-        views={p.allViews}
-        onStatus={p.onStatus}
-        activeStatus={p.status}
-      />
       <section className="room-section" id="rooms">
         <div className="section-title">
           <h2>{title}</h2>

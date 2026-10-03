@@ -239,7 +239,6 @@ export function StudyApp({ roomId }: { roomId?: string }) {
             )}
             <DiscoverRooms
               views={filtered}
-              allViews={views}
               query={query}
               onQuery={setQuery}
               status={status}

@@ -219,14 +219,63 @@ h2 {
   padding-top: 58px;
 }
 .discovery-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 0.43fr) minmax(0, 0.57fr);
-  column-gap: 28px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
 }
 .discovery-intro {
-  grid-column: 1;
-  grid-row: 1;
+  width: 100%;
+}
+/* Prototype-style lime quick filters */
+.quick-actions {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  padding-block: 2px 22px;
+  scrollbar-width: none;
+}
+.quick-actions::-webkit-scrollbar {
+  display: none;
+}
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  flex: none;
+  width: 74px;
+  padding: 0;
+}
+.quick-action .qa-circle {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  display: grid;
+  place-items: center;
+  transition:
+    box-shadow 0.15s,
+    filter 0.15s;
+  border: 2px solid transparent;
+}
+.quick-action .qa-label {
+  font-size: 0.8125rem;
+  font-weight: var(--weight-control);
+  color: var(--muted-foreground);
+}
+.quick-action:hover .qa-circle {
+  filter: brightness(1.06);
+}
+.quick-action.active .qa-circle {
+  box-shadow:
+    0 0 0 3px var(--background),
+    0 0 0 5px var(--primary);
+}
+.quick-action.active .qa-label {
+  color: var(--foreground);
 }
 .eyebrow {
   font-size: 0.75rem;
