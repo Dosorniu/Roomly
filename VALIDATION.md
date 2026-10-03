@@ -13,9 +13,9 @@
   `roomly_command(...)`.
 - Live anonymous snapshot returned only revision, sessions, empty memberships and
   room observations. No email addresses or user IDs are part of the public API.
-- One campus invite code is provisioned in the hosted database. For this
-  university prototype it is intentionally documented for reviewers:
-  `ROOMLY-CBS-7Q26`.
+- Access is by university email domain (`@cbs-mail.de`); reviewers use personal
+  single-use guest codes provisioned in Supabase (never committed). The earlier
+  shared code is disabled.
 - Custom SMTP is configured with the project-only sender
   `Roomly <roomlysp@gmail.com>`.
 - Confirm signup and Magic Link/OTP templates both deliver numeric OTPs.

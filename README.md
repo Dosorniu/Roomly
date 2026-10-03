@@ -59,17 +59,11 @@ Notifications are in-app only, watched per demo user. Watches persist locally; a
 
 The Supabase adapter implements the same RoomRepository contract. SQL RPCs enforce transactions, uniqueness of one active session per room and one active membership per student, capacity, server time, ownership and expiration. A privacy-safe public snapshot exposes only room status, estimated end time and occupant count. It never exposes emails, memberships or student IDs. A Realtime revision stream plus a five-second recovery poll refreshes both public and signed-in views. The UI is not the authorization boundary.
 
-Shared authentication is passwordless. A visitor can browse every room before signing in. The first protected action opens the account dialog: email → one-time email verification → campus access code for a new approved account. Returning approved accounts skip the campus code. Supabase persists the browser session, so a fresh email code is not required on every visit. The private approved-email list remains the server-side university-access gate; the campus code can add a newly verified email to that list without exposing the list to the browser.
+Shared authentication is passwordless. A visitor can browse every room before signing in. The first protected action opens the account dialog: email → one-time email verification. A verified university address (`@cbs-mail.de`) is approved automatically; anyone else presents a single-use, expiring guest code. Returning approved accounts skip this step. Supabase persists the browser session, so a fresh email code is not required on every visit. The private approved-email list remains the server-side university-access gate and is never exposed to the browser.
 
 The hosted project, PostgreSQL migrations, Realtime revision publication and public Worker URL were connected on 2026-10-01. Custom SMTP is also configured with the project-only sender `Roomly <roomlysp@gmail.com>`. Both Confirm signup and Magic Link/OTP templates now send a numeric OTP, the live email OTP length is 6 digits, and OTP expiry is 900 seconds (15 minutes). A fresh test account completed the full hosted flow: email OTP → campus access code → approved account access.
 
-For this university prototype, the current shared campus access code is intentionally documented in the repository so reviewers do not need a separate credential handoff:
-
-```text
-ROOMLY-CBS-7Q26
-```
-
-This code is only the Roomly campus-enrollment code. It is not a Supabase password, Gmail password, API key or service-role secret. If the repository is ever made broadly public, rotate/disable this code first.
+Access is granted by university email domain, not a shared code. Verified `@cbs-mail.de` addresses are approved automatically. Reviewers and team members without a university address are given personal single-use guest codes (`max_uses = 1`, one-week expiry) provisioned in Supabase; these are never committed to the repository. The earlier shared code has been disabled.
 
 Administrators manage the catalog and campus access codes through Supabase, not a public admin UI. Keep the committed display catalog and SQL room IDs/capacities in sync. Watches and in-app alerts are stored per account in shared mode. A booking calendar and push/email availability notifications are not included.
 

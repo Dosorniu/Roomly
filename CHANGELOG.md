@@ -108,7 +108,8 @@ Completed hosted-auth setup:
   (15 minutes).
 - Completed a fresh-account end-to-end test: email delivery → OTP verification →
   campus access code → approved Roomly account access.
-- Documented the current university-prototype campus access code in the
-  repository for reviewers: `ROOMLY-CBS-7Q26`.
+- Replaced the shared campus access code with university-domain sign-in
+  (`@cbs-mail.de`) plus personal single-use guest codes; disabled the old
+  shared code. No access code is committed to the repository.
 - The Gmail App Password, Supabase secrets and service-role credentials remain
   outside the repository.
