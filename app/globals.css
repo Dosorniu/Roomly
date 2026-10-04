@@ -511,6 +511,22 @@ h2 {
   grid-row: 2;
   min-width: 0;
   margin-top: 46px;
+  display: flex;
+  flex-direction: column;
+}
+/* Visual order: heading → filters panel → room list → list tools. Lets the
+   advanced filters sit at the top of the results instead of at the very bottom. */
+.section-title {
+  order: 1;
+}
+.advanced-filters {
+  order: 2;
+}
+.room-list {
+  order: 3;
+}
+.list-tools {
+  order: 4;
 }
 .section-title {
   display: flex;
@@ -523,7 +539,8 @@ h2 {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  color: var(--primary);
+  color: var(--link);
+  font-weight: var(--weight-control);
   font-size: 0.875rem;
   padding: 5px 0;
   border: 0;
@@ -674,14 +691,22 @@ h2 {
 .advanced-filters {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 17px 0;
+  gap: 12px;
+  padding: 18px;
+  margin-bottom: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
 }
 .advanced-filters [data-slot="select-trigger"] {
   width: 100%;
-  min-height: 43px;
+  min-height: 44px;
   background: var(--background);
   font-size: 0.875rem;
+}
+.advanced-filters .text-button {
+  grid-column: 1 / -1;
+  justify-self: start;
 }
 .active-session {
   display: flex;
@@ -1028,18 +1053,32 @@ footer {
 .notification-list p {
   font-size: 0.875rem;
 }
-.empty-state,
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 64px 28px !important;
+  min-height: 340px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+.empty-state p {
+  font-size: 0.95rem;
+  color: var(--muted-foreground);
+  max-width: 440px;
+}
+.empty-state .primary-button,
+.empty-state .secondary-button {
+  margin-top: 12px;
+}
 .loading-state {
   text-align: center;
   padding: 35px 20px !important;
-  background: var(--background);
-  border: 0;
-  border-radius: 0;
-}
-.empty-state p {
-  font-size: 0.9375rem;
-}
-.loading-state {
   min-height: 400px;
 }
 .study-modal form {
@@ -1366,27 +1405,19 @@ footer {
 }
 /* Appearance controls and typography stay independent of room state. */
 .brand-logo {
-  display: inline-block;
-  width: 30px;
-  height: 30px;
-  position: relative;
-  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
   flex-shrink: 0;
-  background: var(--background);
-}
-.brand-logo img {
-  position: absolute;
-  max-width: none;
-  width: 45px;
-  height: 45px;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  mix-blend-mode: multiply;
-}
-.dark .brand-logo img {
-  filter: invert(1);
-  mix-blend-mode: screen;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 800;
+  font-size: 1.18rem;
+  line-height: 1;
+  letter-spacing: 0;
 }
 .appearance-modal {
   width: calc(100% - 2rem);
@@ -1747,7 +1778,7 @@ footer {
 .legal p strong,.legal li strong{color:var(--foreground)}
 .legal ul{padding-left:20px;display:flex;flex-direction:column;gap:6px;margin:0}
 
-.footer-link{color:var(--primary);text-decoration:underline;text-underline-offset:3px}
+.footer-link{color:var(--link);text-decoration:underline;text-underline-offset:3px}
 
 /* Guide page */
 .guide-list{display:flex;flex-direction:column;gap:22px;margin-top:22px}
@@ -1907,14 +1938,19 @@ footer {
 
 /* Empty state refinement */
 .empty-state .empty-icon {
-  width: 56px;
-  height: 56px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  margin: 0 auto 6px;
-  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  margin: 0 auto 4px;
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
   color: var(--primary);
+}
+.empty-state [data-slot="empty-title"] {
+  font-size: 1.4rem;
+  font-weight: var(--weight-heading);
+  letter-spacing: -0.3px;
 }
 
 /* ========== My bookings ========== */
@@ -2088,5 +2124,12 @@ a.mb-roomname:hover {
   }
   .mb-head h1 {
     font-size: 1.85rem;
+  }
+}
+
+/* Advanced filters: single column on narrow screens. */
+@media (max-width: 560px) {
+  .advanced-filters {
+    grid-template-columns: 1fr;
   }
 }

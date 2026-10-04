@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     "Find a study space, check in and share a room on campus. Student demonstration prototype.",
   other: {
     "codex-preview": "development",
+    // Bump this when a CSS-only change must force a fresh Cloudflare build
+    // (the Workers build cache otherwise reuses the previously compiled CSS).
+    "build-rev": "2026-10-04.3",
   },
   icons: {
     icon: "/favicon.svg",

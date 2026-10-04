@@ -53,7 +53,7 @@ export function Header({
       <div className="topbar-left">
         <Link className="brand" href="/">
           <span className="brand-logo" aria-hidden="true">
-            <img src="/team-monogram.png" alt="" />
+            R
           </span>
           <span>Roomly</span>
         </Link>
