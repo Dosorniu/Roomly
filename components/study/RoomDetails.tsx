@@ -154,8 +154,9 @@ export function RoomDetails({
           <div className="privacy-note">
             <ShieldCheck size={21} />
             <p>
-              Only room availability and the number of people are visible. Your
-              identity stays private.
+              The public view shows only room status and headcount. Your name is
+              shown to signed-in students (in bookings and shared rooms) and never
+              in the public view; your email stays private.
             </p>
           </div>
           <div className="location-line">

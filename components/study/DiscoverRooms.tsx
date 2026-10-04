@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Search,
+  SearchX,
   SlidersHorizontal,
   X,
   Zap,
@@ -179,6 +180,9 @@ export function DiscoverRooms(p: Props) {
             p.views.map((view) => <RoomCard key={view.room.id} view={view} />)
           ) : (
             <Empty className="empty-state">
+              <div className="empty-icon" aria-hidden="true">
+                <SearchX size={26} />
+              </div>
               <EmptyHeader>
                 <EmptyTitle>No matching rooms</EmptyTitle>
                 <EmptyDescription>
