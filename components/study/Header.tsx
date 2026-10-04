@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Bell, Menu, UserRound, Settings2 } from "lucide-react";
 import { users } from "@/data/catalog";
 import {
@@ -45,26 +46,39 @@ export function Header({
     : accessGranted
       ? "Sign out"
       : "Complete access";
+  const pathname = usePathname();
 
   return (
     <header className="topbar">
-      <Link className="brand" href="/">
-        <span className="brand-logo" aria-hidden="true">
-          <img src="/team-monogram.png" alt="" />
-        </span>
-        <span>Roomly</span>
-      </Link>
-      <nav className="header-actions" aria-label="Main navigation">
-        <Link className="nav-link" href="/">
-          Rooms
+      <div className="topbar-left">
+        <Link className="brand" href="/">
+          <span className="brand-logo" aria-hidden="true">
+            <img src="/team-monogram.png" alt="" />
+          </span>
+          <span>Roomly</span>
         </Link>
-        <Link className="nav-link" href="/help">
-          Guide
-        </Link>
-        <Link className="nav-link" href="/privacy">
-          Privacy
-        </Link>
-        <span className="nav-divider" />
+        <nav className="main-nav" aria-label="Main navigation">
+          <Link
+            className={`nav-link${pathname === "/" ? " active" : ""}`}
+            href="/"
+          >
+            Rooms
+          </Link>
+          <Link
+            className={`nav-link${pathname === "/help" ? " active" : ""}`}
+            href="/help"
+          >
+            Guide
+          </Link>
+          <Link
+            className={`nav-link${pathname === "/privacy" ? " active" : ""}`}
+            href="/privacy"
+          >
+            Privacy
+          </Link>
+        </nav>
+      </div>
+      <nav className="header-actions" aria-label="Account and settings">
         <ThemeToggle />
         <button
           className="icon-button appearance-button"

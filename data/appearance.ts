@@ -23,7 +23,7 @@ export type Appearance = {
 export const defaultAppearance: Appearance = {
   palette: "cbs",
   mode: "dark",
-  textSize: "standard",
+  textSize: "large",
   fontWeight: "regular",
 };
 export const appearanceStorageKey = "nagroom-appearance-v1";

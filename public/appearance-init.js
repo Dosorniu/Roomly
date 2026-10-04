@@ -6,6 +6,6 @@ try {
   root.classList.toggle('dark', mode === 'dark');
   root.style.colorScheme = mode;
   root.dataset.palette = 'cbs';
-  root.dataset.textSize = ['compact', 'standard', 'large'].includes(saved.textSize) ? saved.textSize : 'standard';
+  root.dataset.textSize = ['compact', 'standard', 'large'].includes(saved.textSize) ? saved.textSize : 'large';
   root.dataset.fontWeight = ['regular', 'medium', 'bold'].includes(saved.fontWeight) ? saved.fontWeight : 'regular';
 } catch { /* Use the default appearance when storage is unavailable. */ }
