@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageHeader } from "@/components/study/PageHeader";
 import {
   ArrowLeft,
   Search,
@@ -51,12 +52,14 @@ const sections = [
 
 export default function GuidePage() {
   return (
-    <main className="workspace">
-      <article className="legal">
-        <Link href="/" className="back-link">
-          <ArrowLeft size={17} /> Back
-        </Link>
-        <h1>How Roomly works</h1>
+    <>
+      <PageHeader />
+      <main className="workspace">
+        <article className="legal">
+          <Link href="/" className="back-link">
+            <ArrowLeft size={17} /> Back
+          </Link>
+          <h1>How Roomly works</h1>
         <p className="legal-updated">A quick guide to every feature.</p>
 
         <div className="guide-list">
@@ -77,7 +80,8 @@ export default function GuidePage() {
           This is a student prototype. Figures and records shown in the app are
           demonstration data.
         </p>
-      </article>
-    </main>
+        </article>
+      </main>
+    </>
   );
 }
