@@ -277,6 +277,26 @@ h2 {
 .quick-action.active .qa-label {
   color: var(--foreground);
 }
+.closed-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 20px;
+  padding: 13px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+.closed-banner .closed-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--occupied);
+  flex: none;
+}
 .eyebrow {
   font-size: 0.75rem;
   color: var(--muted-foreground);

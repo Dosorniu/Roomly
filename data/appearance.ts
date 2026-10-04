@@ -1,8 +1,5 @@
 export const appearanceOptions = {
-  palette: [
-    { value: "original", label: "Original", description: "Minimal & neutral" },
-    { value: "cbs", label: "Campus", description: "Black & lime" },
-  ],
+  palette: [{ value: "cbs", label: "Campus", description: "Black & lime" }],
   mode: [
     { value: "light", label: "Light" },
     { value: "dark", label: "Dark" },

@@ -66,13 +66,14 @@ assert.throws(
 );
 run({ type: "leave", roomId: room.id, userId: "B" });
 assert.equal(viewRoom(state, room, now).status, "free");
+// After a session expires, with no one checked in, the room reads as Free again.
 assert.equal(
   viewRoom(
     expire(state, now + FREE_FRESHNESS_MS),
     room,
     now + FREE_FRESHNESS_MS,
   ).status,
-  "unknown",
+  "free",
 );
 const unknown = rooms.find((r) => r.id === "321")!;
 assert.throws(
@@ -95,7 +96,7 @@ run({
   confirmedEmpty: true,
 });
 state = expire(state, now + 60000);
-assert.equal(viewRoom(state, unknown, now + 60000).status, "unknown");
+assert.equal(viewRoom(state, unknown, now + 60000).status, "free");
 assert.ok(!state.memberships.some((m) => m.userId === "C"));
 for (const minutes of [NaN, 0, -1, 481, 1.5, Infinity])
   assert.throws(

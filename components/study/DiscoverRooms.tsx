@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Search,
@@ -43,6 +43,17 @@ interface Props {
 }
 export function DiscoverRooms(p: Props) {
   const [expanded, setExpanded] = useState(false);
+  // Campus opening hours (Mon–Fri, 08:00–20:00). Computed after mount to avoid a
+  // server/client time mismatch; explains why nothing reads as "Free now" off-hours.
+  const [closed, setClosed] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      const n = new Date();
+      const h = n.getHours() + n.getMinutes() / 60;
+      setClosed(n.getDay() === 0 || n.getDay() === 6 || h < 8 || h >= 20);
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
   const active =
     p.floor !== "all" ||
     p.capacity !== "all" ||
@@ -117,6 +128,13 @@ export function DiscoverRooms(p: Props) {
           </button>
         ))}
       </div>
+      {closed && (
+        <div className="closed-banner" role="note">
+          <span className="closed-dot" />
+          Campus is closed right now — rooms are open Mon–Fri, 08:00–20:00. You can
+          still book a slot ahead of time.
+        </div>
+      )}
       <section className="discovery-intro">
         <span className="eyebrow">YOUR CAMPUS, AT A GLANCE</span>
         <h1>Find your study space.</h1>

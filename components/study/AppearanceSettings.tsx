@@ -1,5 +1,5 @@
 "use client";
-import { Moon, Sun, Check } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { appearanceOptions, type Appearance } from "@/data/appearance";
 import { useAppTheme } from "./AppTheme";
@@ -7,45 +7,6 @@ export function AppearanceSettings() {
   const { appearance, setAppearance } = useAppTheme();
   return (
     <div className="appearance-settings">
-      <fieldset>
-        <legend>Color palette</legend>
-        <p className="setting-description">
-          A palette for your campus, in either mode.
-        </p>
-        <RadioGroup
-          aria-label="Color palette"
-          className="palette-choices"
-          value={appearance.palette}
-          onValueChange={(palette) =>
-            setAppearance({ palette: palette as Appearance["palette"] })
-          }
-        >
-          {appearanceOptions.palette.map((option) => (
-            <label
-              key={option.value}
-              className={`palette-choice ${appearance.palette === option.value ? "chosen" : ""}`}
-            >
-              <RadioGroupItem
-                value={option.value}
-                id={`palette-${option.value}`}
-              />
-              <span
-                className={`palette-swatches swatches-${option.value}`}
-                aria-hidden="true"
-              >
-                <i />
-                <i />
-                <i />
-              </span>
-              <span className="choice-title">{option.label}</span>
-              <span className="choice-description">{option.description}</span>
-              {appearance.palette === option.value && (
-                <Check className="choice-check" size={16} />
-              )}
-            </label>
-          ))}
-        </RadioGroup>
-      </fieldset>
       <fieldset>
         <legend>Mode</legend>
         <RadioGroup

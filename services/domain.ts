@@ -49,23 +49,17 @@ export function viewRoom(state: StudyState, room: Room, now: number): RoomView {
   const session = state.sessions.find(
     (s) => s.roomId === room.id && s.expectedEnd > now,
   );
-  const observation = state.observations.find((o) => o.roomId === room.id);
+  // Product model: a room is Free unless someone has an active session in it.
+  // No active check-in means the room is available right now.
   return {
     room,
     session,
-    status: session
-      ? session.openToShare
-        ? "share"
-        : "occupied"
-      : observation?.status === "free" &&
-          now - observation.updatedAt < FREE_FRESHNESS_MS
-        ? "free"
-        : "unknown",
+    status: session ? (session.openToShare ? "share" : "occupied") : "free",
     count: session
       ? (session.occupantCount ??
         state.memberships.filter((m) => m.sessionId === session.id).length)
       : 0,
-    updatedAt: session?.startedAt ?? observation?.updatedAt ?? 0,
+    updatedAt: session?.startedAt ?? 0,
   };
 }
 export function applyCommand(
@@ -103,7 +97,13 @@ export function applyCommand(
       throw Error(
         "Someone has already checked in. Please review the updated room.",
       );
-    if (v.status === "unknown" && !cmd.confirmedEmpty)
+    const observedFree = state.observations.some(
+      (o) =>
+        o.roomId === room.id &&
+        o.status === "free" &&
+        now - o.updatedAt < FREE_FRESHNESS_MS,
+    );
+    if (!observedFree && !cmd.confirmedEmpty)
       throw Error("Confirm the room is empty in person before checking in.");
     state.sessions.push({
       id,
