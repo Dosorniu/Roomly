@@ -553,8 +553,10 @@ h2 {
     box-shadow 0.15s;
 }
 .room-row:hover {
-  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
-  box-shadow: 0 6px 20px -12px rgba(0, 0, 0, 0.3);
+  border-color: color-mix(in srgb, var(--primary) 75%, var(--border));
+  box-shadow:
+    0 16px 34px -16px rgba(0, 0, 0, 0.45),
+    0 4px 12px -8px rgba(0, 0, 0, 0.25);
 }
 .rc-top {
   display: flex;
@@ -1773,8 +1775,14 @@ footer {
     border-color 0.15s ease,
     filter 0.15s ease;
 }
+.room-row {
+  will-change: transform;
+}
 .room-row:hover {
-  transform: translateY(-3px);
+  transform: translateY(-5px);
+}
+.room-row:hover .rc-go {
+  transform: scale(1.08);
 }
 .primary-button:active,
 .secondary-button:active,
