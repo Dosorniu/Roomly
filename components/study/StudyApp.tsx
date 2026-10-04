@@ -54,7 +54,7 @@ export function StudyApp({ roomId }: { roomId?: string }) {
 
   const [floor, setFloor] = useState("all");
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<Status | "all">("free");
+  const [status, setStatus] = useState<Status | "all">("all");
   const [capacity, setCapacity] = useState("all");
   const [type, setType] = useState("all");
   const [authOpen, setAuthOpen] = useState(false);
@@ -170,8 +170,23 @@ export function StudyApp({ roomId }: { roomId?: string }) {
 
       <main className="workspace">
         {!ready ? (
-          <div className="loading-state" role="status">
-            Loading study spaces…
+          <div
+            className="skeleton-grid"
+            role="status"
+            aria-label="Loading study spaces"
+          >
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div className="skeleton-card" key={i}>
+                <div>
+                  <div className="sk sk-title" />
+                  <div className="sk sk-sub" />
+                </div>
+                <div className="sk-foot">
+                  <div className="sk sk-count" />
+                  <div className="sk sk-go" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <section className="empty-state" role="alert">
@@ -239,7 +254,6 @@ export function StudyApp({ roomId }: { roomId?: string }) {
             )}
             <DiscoverRooms
               views={filtered}
-              allViews={views}
               query={query}
               onQuery={setQuery}
               status={status}
