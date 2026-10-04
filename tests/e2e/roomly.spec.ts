@@ -24,8 +24,7 @@ test("search and mobile layout retain the 27-room catalog", async ({
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  // "Free now" is the default active quick filter; tapping it clears back to all rooms.
-  await page.getByRole("button", { name: "Free now", exact: true }).click();
+  // The catalog shows all study spaces by default.
   await expect(page.locator(".room-row")).toHaveCount(27);
   await page
     .getByPlaceholder("Search by room, building or floor...")

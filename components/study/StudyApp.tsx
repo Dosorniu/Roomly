@@ -54,7 +54,7 @@ export function StudyApp({ roomId }: { roomId?: string }) {
 
   const [floor, setFloor] = useState("all");
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<Status | "all">("free");
+  const [status, setStatus] = useState<Status | "all">("all");
   const [capacity, setCapacity] = useState("all");
   const [type, setType] = useState("all");
   const [authOpen, setAuthOpen] = useState(false);
