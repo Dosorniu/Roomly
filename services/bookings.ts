@@ -1,7 +1,7 @@
 import { getSupabase, sharedMode } from "./supabase-client";
 import { sessionStore } from "./session-store";
 import { users } from "../data/catalog";
-import type { Booking } from "../types/domain";
+import type { Booking, MyBooking } from "../types/domain";
 
 // Advance room bookings. In shared mode these call the server RPCs, which derive
 // the actor from the verified JWT and enforce overlap, duration and campus rules.
@@ -95,6 +95,40 @@ export async function roomBookings(
       endsAt: b.endsAt,
       mine: b.mine === true,
       by: b.mine === true ? "You" : (b.by ?? "Student"),
+    }),
+  );
+}
+
+// The signed-in student's own upcoming reservations, across every room. Demo mode
+// filters this browser's bookings; shared mode calls an authenticated RPC that
+// derives the actor from the JWT and scopes to the actor's own rows only.
+export async function myBookings(windowDays = 31): Promise<MyBooking[]> {
+  const now = Date.now();
+  if (!sharedMode) {
+    const horizon = now + windowDays * 86400000;
+    return readDemo()
+      .filter(
+        (b) => b.userId === demoUser() && b.endsAt > now && b.startsAt < horizon,
+      )
+      .sort((a, b) => a.startsAt - b.startsAt)
+      .map((b) => ({
+        id: b.id,
+        roomId: b.roomId,
+        startsAt: b.startsAt,
+        endsAt: b.endsAt,
+      }));
+  }
+  const { data, error } = await getSupabase().rpc("roomly_my_bookings", {
+    window_days: windowDays,
+  });
+  if (error) throw new Error(error.message);
+  if (!Array.isArray(data)) throw new Error("Invalid bookings response.");
+  return data.map(
+    (b: { id: string; roomId: string; startsAt: number; endsAt: number }) => ({
+      id: b.id,
+      roomId: b.roomId,
+      startsAt: b.startsAt,
+      endsAt: b.endsAt,
     }),
   );
 }

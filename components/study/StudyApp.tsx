@@ -17,6 +17,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { DiscoverRooms } from "./DiscoverRooms";
+import { MyBookings } from "./MyBookings";
 import { Header } from "./Header";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { useAppTheme } from "./AppTheme";
@@ -31,7 +32,13 @@ import { SupabaseRepository } from "@/services/supabase-repository";
 import { SignIn } from "./SignIn";
 import { registerRoomTools } from "@/services/webmcp";
 
-export function StudyApp({ roomId }: { roomId?: string }) {
+export function StudyApp({
+  roomId,
+  bookings,
+}: {
+  roomId?: string;
+  bookings?: boolean;
+}) {
   const { theme } = useAppTheme();
   const state = useSyncExternalStore(
     repository.subscribe,
@@ -207,6 +214,12 @@ export function StudyApp({ roomId }: { roomId?: string }) {
               </button>
             )}
           </section>
+        ) : bookings ? (
+          <MyBookings
+            canInteract={canInteract}
+            shared={sharedMode}
+            onRequireAuth={() => setAuthOpen(true)}
+          />
         ) : roomId ? (
           selected ? (
             <RoomDetails

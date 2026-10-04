@@ -81,3 +81,11 @@ export interface Booking {
   // Visible to signed-in students only; never includes an email address.
   by: string;
 }
+// One of the signed-in student's own reservations, across any room. Used by the
+// "My bookings" view, which resolves roomId to a room via the catalog.
+export interface MyBooking {
+  id: string;
+  roomId: string;
+  startsAt: number;
+  endsAt: number;
+}

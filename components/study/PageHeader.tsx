@@ -21,6 +21,9 @@ export function PageHeader() {
           <Link className={cls("/")} href="/">
             Rooms
           </Link>
+          <Link className={cls("/bookings")} href="/bookings">
+            My bookings
+          </Link>
           <Link className={cls("/help")} href="/help">
             Guide
           </Link>

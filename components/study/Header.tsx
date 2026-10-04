@@ -65,6 +65,12 @@ export function Header({
             Rooms
           </Link>
           <Link
+            className={`nav-link${pathname === "/bookings" ? " active" : ""}`}
+            href="/bookings"
+          >
+            My bookings
+          </Link>
+          <Link
             className={`nav-link${pathname === "/help" ? " active" : ""}`}
             href="/help"
           >
@@ -132,6 +138,9 @@ export function Header({
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
                 <Link href="/">Rooms</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/bookings">My bookings</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/help">Guide</Link>

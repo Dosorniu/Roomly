@@ -94,3 +94,14 @@ test("saved dark appearance applies even before React hydrates", async ({
   await expect(page.locator("html")).toHaveClass(/dark/);
   await expect(page.locator("html")).toHaveAttribute("data-palette", "cbs");
 });
+
+test("My bookings page shows the empty state by default", async ({ page }) => {
+  await page.goto("/bookings");
+  await expect(
+    page.getByRole("heading", { name: "My bookings", level: 1 }),
+  ).toBeVisible();
+  // Demo mode starts with no reservations.
+  await expect(page.getByText("No upcoming bookings")).toBeVisible();
+  // The nav link to bookings is present in the header.
+  await expect(page.getByRole("link", { name: "My bookings" }).first()).toBeVisible();
+});
