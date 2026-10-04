@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { PageHeader } from "@/components/study/PageHeader";
 
 export const metadata: Metadata = {
   title: "Privacy policy · Roomly",
@@ -11,14 +10,12 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <>
-      <PageHeader />
-      <main className="workspace">
-        <article className="legal">
-          <Link href="/" className="back-link">
-            <ArrowLeft size={17} /> Back
-          </Link>
-          <h1>Privacy policy</h1>
+    <main className="workspace">
+      <article className="legal">
+        <Link href="/" className="back-link">
+          <ArrowLeft size={17} /> Back
+        </Link>
+        <h1>Privacy policy</h1>
         <p className="legal-updated">
           Last updated 4 October 2026 · Roomly, CBS International Business School
         </p>
@@ -100,8 +97,7 @@ export default function PrivacyPage() {
           This is a student prototype. Figures and records shown in the app are
           demonstration data.
         </p>
-        </article>
-      </main>
-    </>
+      </article>
+    </main>
   );
 }
