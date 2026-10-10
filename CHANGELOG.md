@@ -167,6 +167,12 @@ Privacy:
   "Booked"; shared rooms show only a headcount. The name-deriving database
   function is removed. Privacy policy and guide updated.
 
+Security:
+
+- Dependency audit: updated `source-map-js` to 1.2.2 and pinned `sharp` 0.35.5
+  for `next` via `overrides` (two new high-severity advisories). The existing
+  dev-only `miniflare` pin is unchanged.
+
 Database: run `supabase/migrations/202610100008_reservations_privacy.sql` in the
 Supabase SQL Editor (safe to re-run).
 
