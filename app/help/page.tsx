@@ -31,12 +31,12 @@ const sections = [
   {
     icon: CalendarClock,
     title: "Book a slot for later",
-    body: "On a room page, open Availability. Pick a duration (30 minutes to 2 hours), move between weeks with the arrows, then tap a free start time and confirm. Opening hours run 08:00–20:00. Booking holds the whole room for that slot so no one else can take it; tap your own slot to cancel.",
+    body: "On a room page, open Availability. Pick a duration (30 minutes to 2 hours), move between weeks with the arrows, then tap a free start time and confirm. Bookings are possible Monday to Friday, 08:00–20:00. A booking holds the whole room — no one else can check in or book it for that time; tap your own slot to cancel.",
   },
   {
     icon: Users,
     title: "Sharing a room",
-    body: "When a room holder marks a room open to sharing, other students can join up to the room’s capacity. Signed-in students can see who is already there, so you know who you would be sitting with.",
+    body: "When a room holder marks a room open to sharing, other students can join up to the room’s capacity. You see how many people are already there — never who they are.",
   },
   {
     icon: Bell,
@@ -46,7 +46,7 @@ const sections = [
   {
     icon: ShieldCheck,
     title: "Your privacy",
-    body: "The public view shows only a room’s status and headcount. Your name is shown only to other signed-in students (in bookings and shared rooms), never in the public view, and your email is never shown to anyone. See the privacy policy for details.",
+    body: "Roomly is anonymous. Everyone sees only a room’s status and headcount; booked slots show as “Booked”. Your name and email are never shown to anyone. See the privacy policy for details.",
   },
 ];
 
@@ -60,26 +60,26 @@ export default function GuidePage() {
             <ArrowLeft size={17} /> Back
           </Link>
           <h1>How Roomly works</h1>
-        <p className="legal-updated">A quick guide to every feature.</p>
+          <p className="legal-updated">A quick guide to every feature.</p>
 
-        <div className="guide-list">
-          {sections.map(({ icon: Icon, title, body }) => (
-            <div className="guide-item" key={title}>
-              <div className="guide-icon">
-                <Icon size={20} />
+          <div className="guide-list">
+            {sections.map(({ icon: Icon, title, body }) => (
+              <div className="guide-item" key={title}>
+                <div className="guide-icon">
+                  <Icon size={20} />
+                </div>
+                <div>
+                  <h2>{title}</h2>
+                  <p>{body}</p>
+                </div>
               </div>
-              <div>
-                <h2>{title}</h2>
-                <p>{body}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <p className="small-note">
-          This is a student prototype. Figures and records shown in the app are
-          demonstration data.
-        </p>
+          <p className="small-note">
+            This is a student prototype. Figures and records shown in the app
+            are demonstration data.
+          </p>
         </article>
       </main>
     </>

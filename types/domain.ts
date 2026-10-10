@@ -39,9 +39,6 @@ export interface User {
 }
 export interface RoomSession {
   occupantCount?: number;
-  // Display names of occupants, present only for rooms open to sharing and only in
-  // the authenticated snapshot. Empty for non-shared rooms and the public view.
-  occupants?: string[];
   id: string;
   roomId: string;
   holderId: string;
@@ -59,10 +56,20 @@ export interface Observation {
   status: "free" | "unknown";
   updatedAt: number;
 }
+// An advance booking as the room status sees it: anonymous, no user id or name.
+// `mine` is true only for the signed-in student's own booking.
+export interface Reservation {
+  roomId: string;
+  startsAt: number;
+  endsAt: number;
+  mine?: boolean;
+}
 export interface StudyState {
   sessions: RoomSession[];
   memberships: RoomMembership[];
   observations: Observation[];
+  // Bookings for roughly the next 24 hours, so status and check-in respect them.
+  reservations?: Reservation[];
   revision: number;
 }
 export interface RoomView {
@@ -70,6 +77,8 @@ export interface RoomView {
   status: Status;
   count: number;
   session?: RoomSession;
+  // A booking that is running right now (and no one is checked in).
+  reservation?: Reservation;
   updatedAt: number;
 }
 export interface Booking {
@@ -77,8 +86,8 @@ export interface Booking {
   startsAt: number;
   endsAt: number;
   mine: boolean;
-  // Short display name of who booked the slot ("You" for the actor's own).
-  // Visible to signed-in students only; never includes an email address.
+  // "You" for your own booking, "Booked" for anyone else's. Bookings are
+  // anonymous: no names or emails are ever shown.
   by: string;
 }
 // One of the signed-in student's own reservations, across any room. Used by the

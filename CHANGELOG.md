@@ -113,3 +113,63 @@ Completed hosted-auth setup:
   shared code. No access code is committed to the repository.
 - The Gmail App Password, Supabase secrets and service-role credentials remain
   outside the repository.
+
+## Update 05 — Redesign, advance bookings and My bookings
+
+Author: Maks (AI-assisted, Claude)
+Date: 2026-10-03 – 2026-10-04
+
+Added:
+
+- Advance room bookings: week calendar on each room page (Mon–Fri, 30-minute
+  grid, 30 min – 2 h), confirmation step, cancel your own slot
+  (`202610050005_bookings.sql`).
+- "My bookings" page (`/bookings`) listing your upcoming reservations with
+  cancel (`202610050007_my_bookings.sql`).
+- Quick-filter circles (Free now, To share, Quiet, Group, Floors), campus-closed
+  notice, loading skeletons and empty states.
+
+Changed:
+
+- Room list redesigned as cards; header with navigation; Campus (CBS) palette
+  set as the default theme; default text size Large; R badge logo.
+- A room with no active check-in is shown as Free.
+
+Note: the room calendar briefly showed booker display names to signed-in
+students (`202610050006_booking_names.sql`); this was reverted in Update 06.
+
+## Update 06 — Bookings and check-in work together, anonymity, sign-in fixes
+
+Author: Maks (AI-assisted, Claude)
+Date: 2026-10-10
+
+Fixed:
+
+- Check-in ignored bookings: you could check into a room someone had reserved
+  for that time. Check-in and extending a stay are now rejected when they run
+  into another student's booking; your own booking never blocks you.
+- Booking ignored check-ins: you could reserve a slot while someone was checked
+  in. Reserving now respects active check-ins (except your own).
+- A room with a booking running right now showed as Free; it now shows
+  "Reserved" with the end time.
+- Booking rules were enforced only by the interface. The server now enforces
+  Monday–Friday, 08:00–20:00 campus time and a 30 min – 2 h duration (the
+  server previously allowed 15 min – 4 h at any hour).
+- Sign-in sent a code to any email address. The university domain
+  (`@cbs-mail.de`) is now checked before a code is sent; guests with a personal
+  code tick "I have a guest code".
+- Mobile: all five quick-filter circles now fit on a phone without sideways
+  scrolling.
+
+Privacy:
+
+- Roomly is anonymous again: no student names anywhere. Bookings show "You" or
+  "Booked"; shared rooms show only a headcount. The name-deriving database
+  function is removed. Privacy policy and guide updated.
+
+Database: run `supabase/migrations/202610100008_reservations_privacy.sql` in the
+Supabase SQL Editor (safe to re-run).
+
+Tests: database test covers campus hours, duration, anonymity and
+reservations vs check-in; domain tests cover reservation blocking; the mobile
+e2e test asserts the filter row fits.

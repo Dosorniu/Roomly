@@ -5,6 +5,7 @@ import { createSeed, rooms } from "../data/catalog";
 import type { StudyState } from "../types/domain";
 import { applyCommand, expire, type Command } from "./domain";
 import { isStudyState } from "./state-validation";
+import { demoReservations } from "./bookings";
 export interface RoomRepository {
   getSnapshot(): StudyState;
   subscribe(fn: () => void): () => void;
@@ -33,7 +34,13 @@ class LocalDemoRepository implements RoomRepository {
     } catch {}
     return this.state;
   }
+  // Demo bookings live in their own storage key; merge them in so status and
+  // check-in see current reservations.
+  private withReservations(state: StudyState): StudyState {
+    return { ...state, reservations: demoReservations(Date.now()) };
+  }
   private notify() {
+    this.state = this.withReservations(this.state);
     observeDemoState(this.state);
     this.listeners.forEach((fn) => fn());
   }
@@ -53,7 +60,13 @@ class LocalDemoRepository implements RoomRepository {
     await this.locked(() => {
       const now = Date.now();
       this.save(
-        applyCommand(this.read(), rooms, cmd, now, crypto.randomUUID()),
+        applyCommand(
+          this.withReservations(this.read()),
+          rooms,
+          cmd,
+          now,
+          crypto.randomUUID(),
+        ),
       );
     });
   };
@@ -65,7 +78,7 @@ class LocalDemoRepository implements RoomRepository {
       this.save(this.state);
     }
     const sync = (event: StorageEvent) => {
-      if (event.key === KEY) {
+      if (event.key === KEY || event.key === "cbs-demo-bookings-v1") {
         this.state = expire(this.read(), Date.now());
         this.notify();
       }

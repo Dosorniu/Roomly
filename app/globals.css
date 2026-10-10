@@ -2133,3 +2133,42 @@ a.mb-roomname:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* Sign-in: "I have a guest code" checkbox row. */
+.signin-form .signin-guest {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.signin-form .signin-guest input {
+  width: 1.05rem;
+  height: 1.05rem;
+  padding: 0;
+  accent-color: var(--primary);
+}
+
+/* Mobile: fit all five quick-filter circles without horizontal scroll. */
+@media (max-width: 560px) {
+  .quick-actions {
+    gap: 6px;
+    overflow-x: visible;
+    justify-content: space-between;
+  }
+  .quick-action {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .quick-action .qa-circle {
+    width: 52px;
+    height: 52px;
+  }
+  .quick-action .qa-label {
+    font-size: 0.72rem;
+    text-align: center;
+    line-height: 1.15;
+  }
+}

@@ -13,7 +13,7 @@ import {
   DoorOpen,
   Check,
 } from "lucide-react";
-import { floors, buildings, users } from "@/data/catalog";
+import { floors, buildings } from "@/data/catalog";
 import type { RoomView, StudyState } from "@/types/domain";
 import type { Command } from "@/services/domain";
 import { StatusBadge } from "./StatusBadge";
@@ -46,7 +46,10 @@ export function RoomDetails({
 }) {
   const [modal, setModal] = useState<"checkIn" | "update" | null>(null);
   const [busy, setBusy] = useState(false);
-  const { room, status, session, count } = view;
+  const { room, status, session, count, reservation } = view;
+  // A booking running now: someone else's blocks the room; your own is yours to use.
+  const reservedByOther = !!reservation && !reservation.mine;
+  const myReservation = !!reservation && reservation.mine;
   const floor = floors.find((f) => f.id === room.floorId)!;
   const building = buildings.find((b) => b.id === floor.buildingId)!;
   const member =
@@ -56,23 +59,6 @@ export function RoomDetails({
     );
   const holder = session?.holderId === userId;
   const other = state.memberships.some((m) => m.userId === userId) && !member;
-
-  // Who is currently in a Share room. Shown only to signed-in students (the public
-  // view never carries names). Prefer the server-provided display names; fall back to
-  // the demo catalog in local mode.
-  const canView = !shared || canInteract;
-  const occupantNames: string[] =
-    session && session.openToShare && canView
-      ? session.occupants && session.occupants.length > 0
-        ? session.occupants
-        : state.memberships
-            .filter((m) => m.sessionId === session.id)
-            .map((m) =>
-              m.userId === userId
-                ? "You"
-                : (users.find((u) => u.id === m.userId)?.displayName ?? "Student"),
-            )
-      : [];
 
   const requireInteractionAccess = () => {
     if (canInteract) return true;
@@ -95,7 +81,10 @@ export function RoomDetails({
       <div className="detail-grid">
         <article className="detail-main">
           <div className="detail-heading">
-            <StatusBadge status={status} />
+            <StatusBadge
+              status={status}
+              label={reservedByOther ? "Reserved" : undefined}
+            />
             <span className="room-number">ROOM {room.number}</span>
           </div>
           <h1>{room.name}</h1>
@@ -117,31 +106,25 @@ export function RoomDetails({
               <strong>
                 {session
                   ? timeLabel(session.expectedEnd)
-                  : status === "free"
-                    ? "Now"
-                    : "Unconfirmed"}
+                  : reservation
+                    ? timeLabel(reservation.endsAt)
+                    : status === "free"
+                      ? "Now"
+                      : "Unconfirmed"}
               </strong>
               <span>
                 {session
                   ? "estimated session end"
-                  : status === "free"
-                    ? "available to check in"
-                    : "please check in person"}
+                  : reservedByOther
+                    ? "reserved until"
+                    : myReservation
+                      ? "your booking ends"
+                      : status === "free"
+                        ? "available to check in"
+                        : "please check in person"}
               </span>
             </div>
           </div>
-          {status === "share" && occupantNames.length > 0 && (
-            <div className="occupants">
-              <h2>Who’s here</h2>
-              <div className="occupant-chips">
-                {occupantNames.map((n, i) => (
-                  <span key={i} className="occupant-chip">
-                    <Users size={14} /> {n}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
           <h2>In this space</h2>
           <div className="amenities">
             {room.features.map((f) => (
@@ -154,9 +137,9 @@ export function RoomDetails({
           <div className="privacy-note">
             <ShieldCheck size={21} />
             <p>
-              The public view shows only room status and headcount. Your name is
-              shown to signed-in students (in bookings and shared rooms) and never
-              in the public view; your email stays private.
+              Roomly is anonymous: everyone sees only whether a room is free,
+              shared, occupied or booked, and how many people are inside — never
+              names or email addresses.
             </p>
           </div>
           <div className="location-line">
@@ -175,26 +158,34 @@ export function RoomDetails({
               ? holder
                 ? "You’re the room holder."
                 : "You’ve joined this room."
-              : status === "free"
-                ? "A space of your own."
-                : status === "share"
-                  ? "A table worth sharing."
-                  : status === "occupied"
-                    ? "A session is in progress."
-                    : "No recent update."}
+              : reservedByOther
+                ? "This room is booked."
+                : myReservation
+                  ? "Your booking is running."
+                  : status === "free"
+                    ? "A space of your own."
+                    : status === "share"
+                      ? "A table worth sharing."
+                      : status === "occupied"
+                        ? "A session is in progress."
+                        : "No recent update."}
           </h2>
           <p>
             {member
               ? holder
                 ? "You can change the time and choose whether others can join."
                 : "The room holder manages the end time and sharing preference."
-              : status === "free"
-                ? "Already here? Check in so others know the room is in use."
-                : status === "share"
-                  ? "Join if you are here and there is a seat available."
-                  : status === "occupied"
-                    ? "This room is currently closed to additional participants."
-                    : "Check the room in person before starting a session."}
+              : reservedByOther
+                ? `Someone reserved it until ${timeLabel(reservation!.endsAt)}. Pick a free slot in the calendar below.`
+                : myReservation
+                  ? "Check in when you arrive so others see the room is in use."
+                  : status === "free"
+                    ? "Already here? Check in so others know the room is in use."
+                    : status === "share"
+                      ? "Join if you are here and there is a seat available."
+                      : status === "occupied"
+                        ? "This room is currently closed to additional participants."
+                        : "Check the room in person before starting a session."}
           </p>
 
           {shared && !canInteract && (

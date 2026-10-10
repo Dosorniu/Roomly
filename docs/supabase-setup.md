@@ -16,6 +16,11 @@ Run the committed SQL files in filename order on a fresh project:
 1. `supabase/migrations/202609210001_roomly.sql`
 2. `supabase/migrations/202609210002_catalog.sql`
 3. `supabase/migrations/202610010003_public_browse_auth.sql`
+4. `supabase/migrations/202610050004_auth_hardening.sql`
+5. `supabase/migrations/202610050005_bookings.sql`
+6. `supabase/migrations/202610050006_booking_names.sql` (superseded by 8)
+7. `supabase/migrations/202610050007_my_bookings.sql`
+8. `supabase/migrations/202610100008_reservations_privacy.sql`
 
 The migrations create:
 

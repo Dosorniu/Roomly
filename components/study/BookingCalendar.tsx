@@ -15,8 +15,18 @@ const DURATIONS = [30, 60, 90, 120];
 const WINDOW_DAYS = 31; // how far ahead we fetch and allow booking
 const WD = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 const fmt = (m: number) =>
@@ -156,7 +166,9 @@ export function BookingCalendar({
         `Reserved ${MONTHS[confirm.day.getMonth()]} ${confirm.day.getDate()}, ${fmt(confirm.start)}–${fmt(confirm.start + dur)}.`,
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Unable to reserve the slot.");
+      toast.error(
+        e instanceof Error ? e.message : "Unable to reserve the slot.",
+      );
     } finally {
       setBusy(false);
     }
@@ -170,7 +182,9 @@ export function BookingCalendar({
       await load();
       toast.success("Reservation cancelled.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Unable to cancel the slot.");
+      toast.error(
+        e instanceof Error ? e.message : "Unable to cancel the slot.",
+      );
     } finally {
       setBusy(false);
     }
@@ -325,7 +339,9 @@ export function BookingCalendar({
                           onClick={() => {
                             const end = st + dur;
                             if (end > CLOSE) {
-                              toast.error("That runs past closing time (20:00).");
+                              toast.error(
+                                "That runs past closing time (20:00).",
+                              );
                               return;
                             }
                             if (covered(st, end)) {
@@ -359,7 +375,9 @@ export function BookingCalendar({
                         cursor: b.mine ? "pointer" : "default",
                       }}
                       onClick={b.mine ? () => onCancel(b.id) : undefined}
-                      title={b.mine ? "Tap to cancel your reservation" : undefined}
+                      title={
+                        b.mine ? "Tap to cancel your reservation" : undefined
+                      }
                     >
                       <span>{b.by}</span>
                       <small>
@@ -375,8 +393,9 @@ export function BookingCalendar({
       )}
 
       <p className="small-note">
-        Pick a duration, tap a free start time, then confirm. Tap your own slot to
-        cancel it. Names are shown only to signed-in students.
+        Pick a duration, tap a free start time, then confirm. Tap your own slot
+        to cancel it. Bookings are anonymous — others only see that a slot is
+        taken.
       </p>
 
       {confirm && (
@@ -389,16 +408,16 @@ export function BookingCalendar({
           <div className="sheet" role="dialog" aria-modal="true">
             <h3>Book this room?</h3>
             <p className="s-sub">
-              {WD[(confirm.day.getDay() + 6) % 7]}, {MONTHS[confirm.day.getMonth()]}{" "}
-              {confirm.day.getDate()}
+              {WD[(confirm.day.getDay() + 6) % 7]},{" "}
+              {MONTHS[confirm.day.getMonth()]} {confirm.day.getDate()}
             </p>
             <p className="s-label">Your slot</p>
             <div className="sheet-pill">
               {fmt(confirm.start)}–{fmt(confirm.start + dur)} · {durTxt(dur)}
             </div>
             <p className="s-sub">
-              Holds the whole room for this time. Signed-in students see it with
-              your name; no one else can take it.
+              Holds the whole room for this time — no one else can check in or
+              book it. Others only see the slot as booked, never your name.
             </p>
             <div className="sheet-actions">
               <button

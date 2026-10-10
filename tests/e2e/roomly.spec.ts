@@ -36,6 +36,13 @@ test("search and mobile layout retain the 27-room catalog", async ({
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  // All five quick filters fit on a phone — no sideways scrolling of the row.
+  expect(
+    await page.evaluate(() => {
+      const row = document.querySelector(".quick-actions")!;
+      return row.scrollWidth <= row.clientWidth;
+    }),
+  ).toBe(true);
 });
 
 test("check-in, cross-tab join, holder transfer and final leave", async ({

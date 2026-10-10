@@ -72,6 +72,41 @@ async function asAnon(sql, args = []) {
   }
 }
 
+// A slot in campus time (Europe/Berlin): `daysAhead` days out, on a weekday
+// (or a weekend day when `weekend` is true), starting at `hour`:00.
+function berlinOffset(ts) {
+  const label = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Berlin",
+    timeZoneName: "longOffset",
+  }).format(new Date(ts));
+  const m = label.match(/GMT([+-])(\d{2}):?(\d{2})?/);
+  if (!m) return 0;
+  return (
+    (m[1] === "-" ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3] || 0)) * 60000
+  );
+}
+function berlinSlot(daysAhead, hour, minutes, weekend = false) {
+  for (let d = daysAhead; d < daysAhead + 14; d++) {
+    const parts = Object.fromEntries(
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/Berlin",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        weekday: "short",
+      })
+        .formatToParts(new Date(Date.now() + d * 86400000))
+        .map((p) => [p.type, p.value]),
+    );
+    const isWeekend = ["Sat", "Sun"].includes(parts.weekday);
+    if (isWeekend !== weekend) continue;
+    const guess = Date.UTC(+parts.year, +parts.month - 1, +parts.day, hour, 0);
+    const start = guess - berlinOffset(guess);
+    return [start, start + minutes * 60000];
+  }
+  throw Error("no slot");
+}
+
 const command = (
   id,
   action,
@@ -100,12 +135,8 @@ try {
   assert.equal(initialPublic.state.observations.length, 0);
 
   assert.equal(
-    (
-      await asUser(
-        ids[3],
-        "select public.roomly_access_status() as allowed",
-      )
-    ).rows[0].allowed,
+    (await asUser(ids[3], "select public.roomly_access_status() as allowed"))
+      .rows[0].allowed,
     false,
   );
   await assert.rejects(
@@ -120,12 +151,8 @@ try {
     "TEST-CAMPUS-CODE",
   ]);
   assert.equal(
-    (
-      await asUser(
-        ids[3],
-        "select public.roomly_access_status() as allowed",
-      )
-    ).rows[0].allowed,
+    (await asUser(ids[3], "select public.roomly_access_status() as allowed"))
+      .rows[0].allowed,
     true,
   );
   assert.equal((await snapshot(ids[3])).userId, ids[3]);
@@ -189,12 +216,11 @@ try {
   assert.equal(privateView.state.sessions[0].occupantCount, 2);
   assert.deepEqual(privateView.state.memberships, []);
   assert.ok(!JSON.stringify(privateView).includes(ids[0]));
-  // 118 is open to sharing: signed-in students see WHO is there (display names,
-  // never emails), ordered by join time.
-  assert.deepEqual(
+  // Occupancy is anonymous for everyone: a count, never names.
+  assert.equal(
     privateView.state.sessions[0].occupants,
-    ["Student0", "Student1"],
-    "share rooms expose occupant display names to signed-in students",
+    undefined,
+    "snapshots never list occupant names",
   );
   assert.ok(!JSON.stringify(privateView).includes("@example.test"));
 
@@ -222,11 +248,10 @@ try {
   );
   assert.equal((await snapshot(ids[0])).notices.length, 0);
   await command(ids[0], "checkIn", "118", 1, false);
-  // A non-shared session keeps occupancy anonymous — only a count, no names.
-  assert.deepEqual(
+  assert.equal(
     (await snapshot(ids[0])).state.sessions.find((s) => s.roomId === "118")
       .occupants,
-    [],
+    undefined,
     "non-shared rooms never list occupant names",
   );
   await assert.rejects(command(ids[1], "join", "118"), /no longer open/);
@@ -269,16 +294,14 @@ try {
   await db.query(
     "insert into roomly_private.allowed_students(email,university_id) values ('bk1@example.test','cbs'),('bk2@example.test','cbs')",
   );
-  const bh = (n) => Date.now() + n * 3600000;
+  const slotA = berlinSlot(2, 10, 120); // 10:00–12:00
+  const slotB = berlinSlot(2, 11, 60); // overlaps slotA
   const rid = (
-    await asUser(bk1, "select public.roomly_reserve('112',$1,$2) as id", [
-      bh(24),
-      bh(26),
-    ])
+    await asUser(bk1, "select public.roomly_reserve('112',$1,$2) as id", slotA)
   ).rows[0].id;
   assert.ok(rid, "reserve returns a booking id");
   await assert.rejects(
-    asUser(bk2, "select public.roomly_reserve('112',$1,$2)", [bh(25), bh(27)]),
+    asUser(bk2, "select public.roomly_reserve('112',$1,$2)", slotB),
     /already booked/,
     "overlapping slot must be rejected",
   );
@@ -299,39 +322,21 @@ try {
       !JSON.stringify(cal).includes("userId"),
     "booking payload exposes no identities",
   );
-  // A different signed-in student sees the booker's derived display name, never email.
+  // Other students see only that the slot is taken — never who took it.
   const calOther = (
     await asUser(bk2, "select public.roomly_bookings('112') as v")
   ).rows[0].v;
   assert.equal(
     calOther[0].by,
-    "Bk1",
-    "other students see a short display name for the booker",
+    "Booked",
+    "other students see an anonymous label",
   );
   assert.equal(calOther[0].mine, false);
   assert.ok(
     !JSON.stringify(calOther).includes("@") &&
-      !JSON.stringify(calOther).includes("example.test"),
-    "display name never leaks the email address",
-  );
-  // Dotted campus emails derive a "F. Last" display name.
-  const dot = "00000000-0000-4000-8000-0000000000d1";
-  await db.query(
-    "insert into auth.users(id,email,email_confirmed_at) values ($1,'mariia.romanko@example.test',now())",
-    [dot],
-  );
-  await db.query(
-    "insert into roomly_private.allowed_students(email,university_id) values ('mariia.romanko@example.test','cbs')",
-  );
-  await asUser(dot, "select public.roomly_reserve('112',$1,$2)", [
-    bh(48),
-    bh(49),
-  ]);
-  const calDot = (await asUser(bk2, "select public.roomly_bookings('112') as v"))
-    .rows[0].v;
-  assert.ok(
-    calDot.some((b) => b.by === "M. Romanko"),
-    "dotted emails derive a First-initial Last display name",
+      !JSON.stringify(calOther).includes("Bk1") &&
+      !JSON.stringify(calOther).includes(bk1),
+    "the booking calendar never identifies the booker",
   );
   await assert.rejects(
     asUser(bk2, "select public.roomly_cancel_booking($1)", [rid]),
@@ -341,13 +346,113 @@ try {
   await asUser(bk1, "select public.roomly_cancel_booking($1)", [rid]);
   const cal2 = (await asUser(bk2, "select public.roomly_bookings('112') as v"))
     .rows[0].v;
-  assert.ok(
-    !cal2.some((b) => b.id === rid),
-    "cancelled booking is removed",
+  assert.ok(!cal2.some((b) => b.id === rid), "cancelled booking is removed");
+
+  // Booking rules are enforced by the server: campus hours and 30 min – 2 h.
+  await assert.rejects(
+    asUser(
+      bk2,
+      "select public.roomly_reserve('114',$1,$2)",
+      berlinSlot(2, 10, 60, true),
+    ),
+    /Monday to Friday/,
+    "weekend bookings are rejected",
+  );
+  await assert.rejects(
+    asUser(
+      bk2,
+      "select public.roomly_reserve('114',$1,$2)",
+      berlinSlot(2, 19, 120),
+    ),
+    /Monday to Friday, 08:00/,
+    "bookings past 20:00 are rejected",
+  );
+  await assert.rejects(
+    asUser(
+      bk2,
+      "select public.roomly_reserve('114',$1,$2)",
+      berlinSlot(2, 14, 20),
+    ),
+    /30 minutes and 2 hours/,
+  );
+  await assert.rejects(
+    asUser(
+      bk2,
+      "select public.roomly_reserve('114',$1,$2)",
+      berlinSlot(2, 9, 180),
+    ),
+    /30 minutes and 2 hours/,
   );
 
+  // Check-in respects reservations. Reservations running right now are inserted
+  // directly, because reserve() only accepts campus hours.
+  const now = Date.now();
+  await db.query(
+    "insert into roomly_private.bookings(room_id,user_id,starts_at,ends_at,created_at) values('203',$1,$2,$3,$2)",
+    [bk1, now - 600000, now + 3000000],
+  );
+  await assert.rejects(
+    command(bk2, "checkIn", "203", 30, false, true),
+    /reserved until/,
+    "another student's reservation blocks check-in",
+  );
+  await command(bk1, "checkIn", "203", 30, false, true);
+  await command(bk1, "leave", "203");
+  await db.query(
+    "insert into roomly_private.bookings(room_id,user_id,starts_at,ends_at,created_at) values('301',$1,$2,$3,$2)",
+    [bk1, now + 1200000, now + 4800000],
+  );
+  await assert.rejects(
+    command(bk2, "checkIn", "301", 60, false, true),
+    /booked from/,
+    "a stay that runs into a reservation is rejected",
+  );
+  await command(bk2, "checkIn", "301", 15, false, true);
+  await assert.rejects(
+    command(bk2, "update", "301", 60, false),
+    /booked from/,
+    "extending into a reservation is rejected",
+  );
+  await command(bk2, "leave", "301");
+
+  // Reservations appear in snapshots, anonymously.
+  const resPrivate = (await snapshot(bk2)).state.reservations;
+  const r203 = resPrivate.find((r) => r.roomId === "203");
+  assert.ok(
+    r203 && r203.mine === false,
+    "reservations are listed for the room",
+  );
+  assert.equal(
+    (await snapshot(bk1)).state.reservations.find((r) => r.roomId === "203")
+      .mine,
+    true,
+  );
+  const resPublic = (await publicSnapshot()).state.reservations;
+  assert.ok(resPublic.some((r) => r.roomId === "203"));
+  assert.ok(resPublic.every((r) => r.mine === false));
+  assert.ok(
+    !JSON.stringify(resPublic).includes(bk1) &&
+      !JSON.stringify(resPrivate).includes(bk1),
+    "reservations never carry user ids",
+  );
+
+  // Reserve respects check-ins: someone checked in blocks the slot, unless it's you.
+  const slotC = berlinSlot(3, 9, 60);
+  await command(bk2, "checkIn", "302", 30, false, true);
+  await db.query(
+    "update roomly_private.sessions set expected_end=$1 where room_id='302'",
+    [slotC[1] + 3600000],
+  );
+  await assert.rejects(
+    asUser(bk1, "select public.roomly_reserve('302',$1,$2)", slotC),
+    /checked in until/,
+    "a check-in blocks reservations in that time",
+  );
+  await asUser(bk2, "select public.roomly_reserve('302',$1,$2)", slotC);
+  await command(bk2, "leave", "302");
+
   console.log(
-    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation, bookings (reserve, overlap, privacy, cancel).",
+    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation, bookings (reserve, overlap, anonymity, cancel, campus hours, duration), reservations vs check-in.",
   );
 } finally {
   await db.close();
