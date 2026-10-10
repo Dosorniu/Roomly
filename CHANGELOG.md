@@ -179,3 +179,43 @@ Supabase SQL Editor (safe to re-run).
 Tests: database test covers campus hours, duration, anonymity and
 reservations vs check-in; domain tests cover reservation blocking; the mobile
 e2e test asserts the filter row fits.
+
+## Update 07 — Check-in fix and shared bookings
+
+Author: Maks (AI-assisted, Claude)
+Date: 2026-10-10
+
+Fixed:
+
+- Check In failed with "Confirm the room is empty in person before checking
+  in." on every room without a recent update, on any day of the week. The
+  interface shows such rooms as Free and never offered the confirmation, but
+  the server still required it. Free now means free: the confirmation step is
+  removed on the server and in the app.
+- The check-in dialog said the room becomes "Unknown" after a session; it now
+  says the room shows as Free again.
+
+Added:
+
+- Calendar bookings can be shared: "Can others join you?" in the booking
+  sheet. While a shared booking runs the room shows "Open to Share"; other
+  students may check in, but their session has to stay open to others. When the
+  booker arrives and someone is already inside, Check In adds them to that
+  session. Private bookings still hold the whole room.
+- A shared booking can be made next to a session that is open to share.
+- Shared bookings are marked "open" in the calendar and "Others can join" in
+  My bookings.
+
+Privacy policy corrected:
+
+- Watched rooms and alerts are stored on the server (the page said "in your
+  browser"); alerts are deleted after 30 days, check-ins when they end.
+- Names the service providers (Supabase, Cloudflare, Gmail) instead of
+  claiming no third parties; mentions guest access codes.
+- Contact is now roomlysp@gmail.com (the old address did not exist).
+
+Database: run `supabase/migrations/202610100009_free_checkin_shared_bookings.sql`
+in the Supabase SQL Editor after merging (safe to re-run).
+
+Tests: domain and database tests cover check-in without confirmation, rooms
+returning to Free when a check-in or booking ends, and shared bookings.

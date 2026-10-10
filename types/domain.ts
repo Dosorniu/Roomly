@@ -63,6 +63,8 @@ export interface Reservation {
   startsAt: number;
   endsAt: number;
   mine?: boolean;
+  // "Others can join": other students may check in while it runs.
+  share?: boolean;
 }
 export interface StudyState {
   sessions: RoomSession[];
@@ -86,6 +88,7 @@ export interface Booking {
   startsAt: number;
   endsAt: number;
   mine: boolean;
+  share?: boolean;
   // "You" for your own booking, "Booked" for anyone else's. Bookings are
   // anonymous: no names or emails are ever shown.
   by: string;
@@ -97,4 +100,5 @@ export interface MyBooking {
   roomId: string;
   startsAt: number;
   endsAt: number;
+  share?: boolean;
 }

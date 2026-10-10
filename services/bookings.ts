@@ -20,6 +20,7 @@ type DemoBooking = {
   userId: string;
   startsAt: number;
   endsAt: number;
+  share?: boolean;
 };
 
 const hhmm = (t: number) =>
@@ -92,6 +93,7 @@ export async function roomBookings(
         startsAt: b.startsAt,
         endsAt: b.endsAt,
         mine: b.userId === demoUser(),
+        share: b.share === true,
         by: b.userId === demoUser() ? "You" : "Booked",
       }));
   }
@@ -107,12 +109,14 @@ export async function roomBookings(
       startsAt: number;
       endsAt: number;
       mine: boolean;
+      share?: boolean;
       by?: string;
     }) => ({
       id: b.id,
       startsAt: b.startsAt,
       endsAt: b.endsAt,
       mine: b.mine === true,
+      share: b.share === true,
       by: b.mine === true ? "You" : "Booked",
     }),
   );
@@ -136,6 +140,7 @@ export async function myBookings(windowDays = 31): Promise<MyBooking[]> {
         roomId: b.roomId,
         startsAt: b.startsAt,
         endsAt: b.endsAt,
+        share: b.share === true,
       }));
   }
   const { data, error } = await getSupabase().rpc("roomly_my_bookings", {
@@ -144,11 +149,18 @@ export async function myBookings(windowDays = 31): Promise<MyBooking[]> {
   if (error) throw new Error(error.message);
   if (!Array.isArray(data)) throw new Error("Invalid bookings response.");
   return data.map(
-    (b: { id: string; roomId: string; startsAt: number; endsAt: number }) => ({
+    (b: {
+      id: string;
+      roomId: string;
+      startsAt: number;
+      endsAt: number;
+      share?: boolean;
+    }) => ({
       id: b.id,
       roomId: b.roomId,
       startsAt: b.startsAt,
       endsAt: b.endsAt,
+      share: b.share === true,
     }),
   );
 }
@@ -157,6 +169,7 @@ export async function reserve(
   roomId: string,
   startsAt: number,
   endsAt: number,
+  share = false,
 ): Promise<void> {
   if (!sharedMode) {
     const now = Date.now();
@@ -187,7 +200,8 @@ export async function reserve(
         s.roomId === roomId &&
         s.expectedEnd > startsAt &&
         s.startedAt < endsAt &&
-        !s.members.includes(demoUser()),
+        !s.members.includes(demoUser()) &&
+        !(s.openToShare && share),
     );
     if (occupied)
       throw new Error(
@@ -199,6 +213,7 @@ export async function reserve(
       userId: demoUser(),
       startsAt,
       endsAt,
+      share,
     });
     writeDemo(list);
     return;
@@ -207,6 +222,7 @@ export async function reserve(
     target_room: roomId,
     p_start: startsAt,
     p_end: endsAt,
+    p_share: share,
   });
   if (error) throw new Error(error.message);
 }
@@ -254,5 +270,6 @@ export function demoReservations(now = Date.now()): Reservation[] {
       startsAt: b.startsAt,
       endsAt: b.endsAt,
       mine: b.userId === me,
+      share: b.share === true,
     }));
 }

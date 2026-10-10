@@ -192,11 +192,8 @@ try {
     asUser(ids[0], "update public.roomly_revision set revision=99"),
     /permission denied/,
   );
-  await assert.rejects(
-    command(ids[0], "checkIn", "118", 60, true),
-    /Confirm the room is empty/,
-  );
-  await command(ids[0], "checkIn", "118", 60, true, true);
+  // Free means free: check-in needs no "room is empty" confirmation.
+  await command(ids[0], "checkIn", "118", 60, true);
   await assert.rejects(
     command(ids[1], "checkIn", "118", 60, true, true),
     /already checked in/,
@@ -451,8 +448,100 @@ try {
   await asUser(bk2, "select public.roomly_reserve('302',$1,$2)", slotC);
   await command(bk2, "leave", "302");
 
+  // Time: a check-in takes the room out of Free and gives it back when it ends;
+  // a running booking does the same until its end.
+  const t1 = Date.now();
+  await command(bk1, "checkIn", "214", 30, false);
+  let snap = await snapshot(bk2);
+  assert.ok(
+    snap.state.sessions.some((x) => x.roomId === "214" && !x.openToShare),
+    "a check-in shows up as an active session",
+  );
+  await db.query(
+    "update roomly_private.sessions set started_at=$1, expected_end=$2 where room_id='214'",
+    [t1 - 1900000, t1 - 1000],
+  );
+  snap = await snapshot(bk2);
+  assert.ok(
+    !snap.state.sessions.some((x) => x.roomId === "214"),
+    "an expired check-in disappears, so the room is Free again",
+  );
+  assert.ok(
+    !(await snapshot(bk1)).state.memberships.length,
+    "the student is no longer checked in after expiry",
+  );
+  await db.query(
+    "insert into roomly_private.bookings(room_id,user_id,starts_at,ends_at,created_at) values('216',$1,$2,$3,$2)",
+    [bk1, t1 - 600000, t1 + 600000],
+  );
+  assert.ok(
+    (await snapshot(bk2)).state.reservations.some(
+      (r) => r.roomId === "216" && r.startsAt <= Date.now(),
+    ),
+  );
+  await db.query(
+    "update roomly_private.bookings set starts_at=$1, ends_at=$2 where room_id='216'",
+    [t1 - 1900000, t1 - 1000],
+  );
+  assert.ok(
+    !(await snapshot(bk2)).state.reservations.some((r) => r.roomId === "216"),
+    "a finished booking no longer holds the room",
+  );
+
+  // Shared bookings ("Others can join").
+  await db.query(
+    "insert into roomly_private.bookings(room_id,user_id,starts_at,ends_at,created_at,open_to_share) values('321',$1,$2,$3,$2,true)",
+    [bk1, t1 - 600000, t1 + 3000000],
+  );
+  const r321 = (await snapshot(bk2)).state.reservations.find(
+    (r) => r.roomId === "321",
+  );
+  assert.ok(r321 && r321.share === true && r321.mine === false);
+  await assert.rejects(
+    command(bk2, "checkIn", "321", 30, false),
+    /booked as shared/,
+    "during a shared booking a check-in must stay open to others",
+  );
+  await command(bk2, "checkIn", "321", 30, true);
+  await assert.rejects(
+    command(bk2, "update", "321", 30, false),
+    /booked as shared/,
+  );
+  await command(bk1, "checkIn", "321", 30, false);
+  const s321 = (await snapshot(bk1)).state.sessions.find(
+    (x) => x.roomId === "321",
+  );
+  assert.equal(
+    s321.occupantCount,
+    2,
+    "the booker arriving joins the student already in the shared room",
+  );
+  await command(bk1, "leave", "321");
+  await command(bk2, "leave", "321");
+
+  // Reserve with p_share: next to an open session only a shared booking is allowed.
+  const slotD = berlinSlot(4, 9, 60);
+  await command(bk2, "checkIn", "303", 30, true);
+  await db.query(
+    "update roomly_private.sessions set expected_end=$1 where room_id='303'",
+    [slotD[1] + 3600000],
+  );
+  await assert.rejects(
+    asUser(bk1, "select public.roomly_reserve('303',$1,$2)", slotD),
+    /checked in until/,
+  );
+  await asUser(bk1, "select public.roomly_reserve('303',$1,$2,true)", slotD);
+  const cal303 = (
+    await asUser(bk2, "select public.roomly_bookings('303') as v")
+  ).rows[0].v;
+  assert.ok(cal303.some((b) => b.share === true && b.by === "Booked"));
+  const mine303 = (await asUser(bk1, "select public.roomly_my_bookings() as v"))
+    .rows[0].v;
+  assert.ok(mine303.some((b) => b.roomId === "303" && b.share === true));
+  await command(bk2, "leave", "303");
+
   console.log(
-    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation, bookings (reserve, overlap, anonymity, cancel, campus hours, duration), reservations vs check-in.",
+    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation, bookings (reserve, overlap, anonymity, cancel, campus hours, duration), reservations vs check-in, check-in without confirmation, Free again after expiry, shared bookings.",
   );
 } finally {
   await db.close();

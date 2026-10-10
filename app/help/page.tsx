@@ -31,7 +31,7 @@ const sections = [
   {
     icon: CalendarClock,
     title: "Book a slot for later",
-    body: "On a room page, open Availability. Pick a duration (30 minutes to 2 hours), move between weeks with the arrows, then tap a free start time and confirm. Bookings are possible Monday to Friday, 08:00–20:00. A booking holds the whole room — no one else can check in or book it for that time; tap your own slot to cancel.",
+    body: "On a room page, open Availability. Pick a duration (30 minutes to 2 hours), move between weeks with the arrows, then tap a free start time and confirm. Bookings are possible Monday to Friday, 08:00–20:00. A booking holds the whole room — no one else can check in or book it for that time — unless you switch on “Can others join you?”: then others can check in and sit with you, but no one else can book it. Tap your own slot to cancel.",
   },
   {
     icon: Users,

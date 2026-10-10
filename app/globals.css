@@ -2172,3 +2172,8 @@ a.mb-roomname:hover {
     line-height: 1.15;
   }
 }
+
+/* Booking sheet: "Can others join you?" */
+.sheet .sheet-share{padding:4px 0 14px;margin-bottom:12px}
+.sheet .sheet-share label{font-weight:var(--weight-control)}
+.sheet .sheet-share p{color:var(--muted-foreground);margin:3px 0 0}

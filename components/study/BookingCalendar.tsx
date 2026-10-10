@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Booking } from "@/types/domain";
 import { roomBookings, reserve, cancelBooking } from "@/services/bookings";
+import { Switch } from "@/components/ui/switch";
 
 // Opening hours and grid resolution. 08:00–20:00 on a 30-minute grid; bookings are
 // drawn as blocks whose height is proportional to their real duration, so a 45- or
@@ -94,6 +95,7 @@ export function BookingCalendar({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [dur, setDur] = useState(60);
+  const [share, setShare] = useState(false);
   const [minWk] = useState(firstOpenOffset);
   const [maxWk] = useState(() => lastOpenOffset(firstOpenOffset()));
   const [weekOffset, setWeekOffset] = useState(minWk);
@@ -159,7 +161,7 @@ export function BookingCalendar({
     if (!confirm || busy) return;
     setBusy(true);
     try {
-      await reserve(roomId, confirm.startMs, confirm.endMs);
+      await reserve(roomId, confirm.startMs, confirm.endMs, share);
       await load();
       setConfirm(null);
       toast.success(
@@ -350,6 +352,7 @@ export function BookingCalendar({
                               );
                               return;
                             }
+                            setShare(false);
                             setConfirm({
                               day: d,
                               start: st,
@@ -376,10 +379,17 @@ export function BookingCalendar({
                       }}
                       onClick={b.mine ? () => onCancel(b.id) : undefined}
                       title={
-                        b.mine ? "Tap to cancel your reservation" : undefined
+                        b.mine
+                          ? "Tap to cancel your reservation"
+                          : b.share
+                            ? "Booked — others can join"
+                            : undefined
                       }
                     >
-                      <span>{b.by}</span>
+                      <span>
+                        {b.by}
+                        {b.share ? " · open" : ""}
+                      </span>
                       <small>
                         {fmt(b.startMin)}–{fmt(b.endMin)}
                       </small>
@@ -415,9 +425,21 @@ export function BookingCalendar({
             <div className="sheet-pill">
               {fmt(confirm.start)}–{fmt(confirm.start + dur)} · {durTxt(dur)}
             </div>
+            <div className="switch-row sheet-share">
+              <div>
+                <label htmlFor="booking-share">Can others join you?</label>
+                <p>{share ? "Yes — Open to Share" : "No — just me"}</p>
+              </div>
+              <Switch
+                id="booking-share"
+                checked={share}
+                onCheckedChange={setShare}
+              />
+            </div>
             <p className="s-sub">
-              Holds the whole room for this time — no one else can check in or
-              book it. Others only see the slot as booked, never your name.
+              {share
+                ? "Others can check in and sit with you during this time, but no one else can book it. Others only see the slot as booked, never your name."
+                : "Holds the whole room for this time — no one else can check in or book it. Others only see the slot as booked, never your name."}
             </p>
             <div className="sheet-actions">
               <button

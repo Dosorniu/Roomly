@@ -20,7 +20,7 @@ export default function PrivacyPage() {
           </Link>
           <h1>Privacy policy</h1>
           <p className="legal-updated">
-            Last updated 4 October 2026 · Roomly, CBS International Business
+            Last updated 10 October 2026 · Roomly, CBS International Business
             School
           </p>
           <p>
@@ -33,17 +33,21 @@ export default function PrivacyPage() {
           <ul>
             <li>
               <strong>Your email address</strong> — only to verify that you are
-              a CBS student and to send a one-time sign-in code. We never ask
-              for a password.
+              a CBS student (or a guest with a personal access code) and to send
+              a one-time sign-in code. We never ask for a password.
             </li>
             <li>
-              <strong>Room activity</strong> — when you check in, join, leave or
-              book a slot, we store which room and the time, linked to your
-              account.
+              <strong>Room activity</strong> — your current check-in (which room
+              and until when) and your bookings (room, time, and whether others
+              can join), linked to your account.
             </li>
             <li>
-              <strong>Preferences</strong> — your chosen theme and watched rooms
-              are stored in your browser, not on our servers.
+              <strong>Alerts</strong> — the rooms you ask to be notified about
+              and the in-app alerts you receive are saved to your account.
+            </li>
+            <li>
+              <strong>Appearance</strong> — your chosen theme is stored only in
+              your browser.
             </li>
           </ul>
 
@@ -76,26 +80,29 @@ export default function PrivacyPage() {
               No advertising, no selling data, no tracking across other sites.
             </li>
             <li>
-              No sharing your email or activity with third parties outside the
-              university&rsquo;s own systems.
+              No sharing your email or activity with anyone except the service
+              providers that run Roomly for us: Supabase (database and sign-in),
+              Cloudflare (hosting) and Google Gmail (sending sign-in codes).
             </li>
           </ul>
 
           <h2>Keeping and deleting data</h2>
           <p>
-            Expired sessions and old notifications are removed automatically.
-            You can ask us to delete your account and activity at any time, and
-            a campus administrator can revoke your access. Email verification is
-            handled by our authentication provider; sign-in codes are single-use
-            and expire after 15 minutes.
+            A check-in is deleted as soon as it ends or you leave, so no history
+            of where you studied is kept. In-app alerts are deleted after 30
+            days. Bookings are not deleted automatically; you can cancel
+            upcoming ones at any time. You can ask us to delete your account and
+            all related data at any time, and a campus administrator can revoke
+            your access. Email verification is handled by our authentication
+            provider; sign-in codes are single-use and expire after 15 minutes.
           </p>
 
           <h2>Contact</h2>
           <p>
             Questions about your data? Write to{" "}
-            <strong>privacy@roomly.cbs-mail.de</strong>. You can also reach the
-            CBS data protection officer through the university&rsquo;s main
-            channels.
+            <a href="mailto:roomlysp@gmail.com">roomlysp@gmail.com</a>. You can
+            also reach the CBS data protection officer through the
+            university&rsquo;s main channels.
           </p>
 
           <p className="small-note">
