@@ -10,7 +10,8 @@ export const timeLabel = (time: number) =>
     minute: "2-digit",
   });
 export function RoomCard({ view }: { view: RoomView }) {
-  const { room, status, session, count } = view;
+  const { room, status, session, count, reservation } = view;
+  const reserved = !session && !!reservation && !reservation.mine;
   return (
     <Link className="room-row" href={roomPath(room)}>
       <div className="rc-top">
@@ -21,7 +22,10 @@ export function RoomCard({ view }: { view: RoomView }) {
             {floors.find((f) => f.id === room.floorId)?.name}
           </p>
         </div>
-        <StatusBadge status={status} />
+        <StatusBadge
+          status={status}
+          label={reserved ? "Reserved" : undefined}
+        />
       </div>
       <div className="rc-foot">
         <span
@@ -35,7 +39,10 @@ export function RoomCard({ view }: { view: RoomView }) {
           <Users size={17} />
           {session ? `${count}/${room.capacity}` : room.capacity}
         </span>
-        <span className={`rc-go${status === "free" ? "" : " ghost"}`} aria-hidden>
+        <span
+          className={`rc-go${status === "free" ? "" : " ghost"}`}
+          aria-hidden
+        >
           <ArrowRight size={18} />
         </span>
       </div>

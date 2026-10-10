@@ -138,3 +138,62 @@ assert.throws(
   () => run({ type: "leave", roomId: tiny.id, userId: "outsider" }),
   /not checked into/,
 );
+
+// Reservations: someone else's booking blocks check-in and extensions; your own
+// does not. A booking running now marks the room occupied for others only.
+{
+  const base = createSeed(now);
+  const r = rooms.find((x) => x.id === "301")!;
+  const withRes = (mine: boolean, startsAt: number, endsAt: number) => ({
+    ...base,
+    reservations: [{ roomId: r.id, startsAt, endsAt, mine }],
+  });
+  const checkIn = (minutes: number): Command => ({
+    type: "checkIn",
+    roomId: r.id,
+    userId: "R",
+    minutes,
+    openToShare: false,
+    confirmedEmpty: true,
+  });
+
+  const runningOther = withRes(false, now - 60_000, now + 3_600_000);
+  assert.equal(viewRoom(runningOther, r, now).status, "occupied");
+  assert.ok(viewRoom(runningOther, r, now).reservation);
+  assert.throws(
+    () => applyCommand(runningOther, rooms, checkIn(30), now, "x"),
+    /reserved until/,
+  );
+
+  const runningMine = withRes(true, now - 60_000, now + 3_600_000);
+  assert.equal(viewRoom(runningMine, r, now).status, "free");
+  applyCommand(runningMine, rooms, checkIn(30), now, "x");
+
+  const later = withRes(false, now + 1_800_000, now + 5_400_000);
+  assert.equal(viewRoom(later, r, now).status, "free");
+  assert.throws(
+    () => applyCommand(later, rooms, checkIn(60), now, "x"),
+    /booked from/,
+  );
+  const short = applyCommand(later, rooms, checkIn(20), now, "x");
+  assert.throws(
+    () =>
+      applyCommand(
+        short,
+        rooms,
+        {
+          type: "update",
+          roomId: r.id,
+          userId: "R",
+          minutes: 60,
+          openToShare: false,
+        },
+        now + 1,
+        "y",
+      ),
+    /booked from/,
+  );
+  console.log(
+    "PASS: reservations block check-in and extensions for others, not for the booker; running bookings show occupied.",
+  );
+}

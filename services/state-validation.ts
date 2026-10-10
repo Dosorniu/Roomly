@@ -15,7 +15,24 @@ export function isStudyState(value: unknown): value is StudyState {
     Number(value.revision) < 0
   )
     return false;
-  const { sessions, memberships, observations } = value;
+  const { sessions, memberships, observations, reservations } = value;
+  if (
+    reservations !== undefined &&
+    !(
+      Array.isArray(reservations) &&
+      reservations.length <= 10000 &&
+      reservations.every(
+        (r) =>
+          record(r) &&
+          text(r.roomId) &&
+          timestamp(r.startsAt) &&
+          timestamp(r.endsAt) &&
+          r.endsAt > r.startsAt &&
+          (r.mine === undefined || typeof r.mine === "boolean"),
+      )
+    )
+  )
+    return false;
   if (
     !Array.isArray(sessions) ||
     !Array.isArray(memberships) ||
@@ -36,9 +53,7 @@ export function isStudyState(value: unknown): value is StudyState {
         s.expectedEnd > s.startedAt &&
         typeof s.openToShare === "boolean" &&
         (s.occupantCount === undefined ||
-          (Number.isInteger(s.occupantCount) && Number(s.occupantCount) >= 0)) &&
-        (s.occupants === undefined ||
-          (Array.isArray(s.occupants) && s.occupants.every(text))),
+          (Number.isInteger(s.occupantCount) && Number(s.occupantCount) >= 0)),
     ) &&
     memberships.every(
       (m) =>

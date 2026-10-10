@@ -5,6 +5,14 @@ export const statusLabels: Record<Status, string> = {
   occupied: "Occupied",
   unknown: "Unknown",
 };
-export function StatusBadge({ status }: { status: Status }) {
-  return <span className={`status ${status}`}>{statusLabels[status]}</span>;
+export function StatusBadge({
+  status,
+  label,
+}: {
+  status: Status;
+  label?: string;
+}) {
+  return (
+    <span className={`status ${status}`}>{label ?? statusLabels[status]}</span>
+  );
 }

@@ -1,16 +1,18 @@
 import { getSupabase, sharedMode } from "./supabase-client";
 import { sessionStore } from "./session-store";
-import { users } from "../data/catalog";
-import type { Booking, MyBooking } from "../types/domain";
+import { isStudyState } from "./state-validation";
+import type { Booking, MyBooking, Reservation } from "../types/domain";
 
 // Advance room bookings. In shared mode these call the server RPCs, which derive
 // the actor from the verified JWT and enforce overlap, duration and campus rules.
 // In local demo mode bookings live in this browser only, with the same rules
-// applied client-side so the prototype behaves consistently.
+// applied client-side so the prototype behaves consistently. Bookings are
+// anonymous: other students only ever see that a slot is "Booked".
 
 const DEMO_KEY = "cbs-demo-bookings-v1";
-const MIN_MS = 900000; // 15 min
-const MAX_MS = 14400000; // 4 h
+const STATE_KEY = "cbs-study-demo-v1"; // demo occupancy, written by repository.ts
+const MIN_MS = 1800000; // 30 min
+const MAX_MS = 7200000; // 2 h
 
 type DemoBooking = {
   id: string;
@@ -18,11 +20,27 @@ type DemoBooking = {
   userId: string;
   startsAt: number;
   endsAt: number;
-  by?: string;
 };
 
-function demoName(userId: string) {
-  return users.find((u) => u.id === userId)?.displayName ?? "Student";
+const hhmm = (t: number) =>
+  new Date(t).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+// Monday to Friday, 08:00–20:00, start and end on the same day.
+function withinCampusHours(start: number, end: number) {
+  const a = new Date(start);
+  const b = new Date(end);
+  const day = a.getDay();
+  const minutes = (d: Date) => d.getHours() * 60 + d.getMinutes();
+  return (
+    day >= 1 &&
+    day <= 5 &&
+    a.toDateString() === b.toDateString() &&
+    minutes(a) >= 480 &&
+    minutes(b) <= 1200
+  );
 }
 
 function readDemo(): DemoBooking[] {
@@ -37,8 +55,7 @@ function readDemo(): DemoBooking[] {
             typeof b.roomId === "string" &&
             typeof b.userId === "string" &&
             typeof b.startsAt === "number" &&
-            typeof b.endsAt === "number" &&
-            (b.by === undefined || typeof b.by === "string"),
+            typeof b.endsAt === "number",
         )
       : [];
   } catch {
@@ -66,14 +83,16 @@ export async function roomBookings(
   if (!sharedMode) {
     const horizon = now + windowDays * 86400000;
     return readDemo()
-      .filter((b) => b.roomId === roomId && b.endsAt > now && b.startsAt < horizon)
+      .filter(
+        (b) => b.roomId === roomId && b.endsAt > now && b.startsAt < horizon,
+      )
       .sort((a, b) => a.startsAt - b.startsAt)
       .map((b) => ({
         id: b.id,
         startsAt: b.startsAt,
         endsAt: b.endsAt,
         mine: b.userId === demoUser(),
-        by: b.userId === demoUser() ? "You" : (b.by ?? demoName(b.userId)),
+        by: b.userId === demoUser() ? "You" : "Booked",
       }));
   }
   const { data, error } = await getSupabase().rpc("roomly_bookings", {
@@ -94,7 +113,7 @@ export async function roomBookings(
       startsAt: b.startsAt,
       endsAt: b.endsAt,
       mine: b.mine === true,
-      by: b.mine === true ? "You" : (b.by ?? "Student"),
+      by: b.mine === true ? "You" : "Booked",
     }),
   );
 }
@@ -108,7 +127,8 @@ export async function myBookings(windowDays = 31): Promise<MyBooking[]> {
     const horizon = now + windowDays * 86400000;
     return readDemo()
       .filter(
-        (b) => b.userId === demoUser() && b.endsAt > now && b.startsAt < horizon,
+        (b) =>
+          b.userId === demoUser() && b.endsAt > now && b.startsAt < horizon,
       )
       .sort((a, b) => a.startsAt - b.startsAt)
       .map((b) => ({
@@ -142,12 +162,16 @@ export async function reserve(
     const now = Date.now();
     const duration = endsAt - startsAt;
     if (duration < MIN_MS || duration > MAX_MS)
-      throw new Error("A booking must be between 15 minutes and 4 hours.");
-    if (startsAt < now - 60000) throw new Error("That time has already passed.");
+      throw new Error("A booking must be between 30 minutes and 2 hours.");
+    if (startsAt < now - 60000)
+      throw new Error("That time has already passed.");
+    if (!withinCampusHours(startsAt, endsAt))
+      throw new Error("Rooms can be booked Monday to Friday, 08:00–20:00.");
     const list = readDemo();
     if (
       list.some(
-        (b) => b.roomId === roomId && b.endsAt > startsAt && b.startsAt < endsAt,
+        (b) =>
+          b.roomId === roomId && b.endsAt > startsAt && b.startsAt < endsAt,
       )
     )
       throw new Error("That slot is already booked.");
@@ -158,13 +182,23 @@ export async function reserve(
       )
     )
       throw new Error("You already have a booking at that time.");
+    const occupied = demoSessions().find(
+      (s) =>
+        s.roomId === roomId &&
+        s.expectedEnd > startsAt &&
+        s.startedAt < endsAt &&
+        !s.members.includes(demoUser()),
+    );
+    if (occupied)
+      throw new Error(
+        `Someone is checked in until ${hhmm(occupied.expectedEnd)}.`,
+      );
     list.push({
       id: crypto.randomUUID(),
       roomId,
       userId: demoUser(),
       startsAt,
       endsAt,
-      by: demoName(demoUser()),
     });
     writeDemo(list);
     return;
@@ -179,11 +213,46 @@ export async function reserve(
 
 export async function cancelBooking(id: string): Promise<void> {
   if (!sharedMode) {
-    writeDemo(readDemo().filter((b) => !(b.id === id && b.userId === demoUser())));
+    writeDemo(
+      readDemo().filter((b) => !(b.id === id && b.userId === demoUser())),
+    );
     return;
   }
   const { error } = await getSupabase().rpc("roomly_cancel_booking", {
     booking_id: id,
   });
   if (error) throw new Error(error.message);
+}
+
+// Demo occupancy, read straight from storage to avoid a circular import with
+// the repository. Each session carries the ids of the students in it.
+function demoSessions() {
+  try {
+    const raw = localStorage.getItem(STATE_KEY);
+    const state = raw ? JSON.parse(raw) : null;
+    if (!isStudyState(state)) return [];
+    return state.sessions.map((s) => ({
+      ...s,
+      members: state.memberships
+        .filter((m) => m.sessionId === s.id)
+        .map((m) => m.userId),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// Demo bookings for the next 24 hours as anonymous reservations, so room status
+// and check-in respect them exactly like the shared snapshot does.
+export function demoReservations(now = Date.now()): Reservation[] {
+  const me = demoUser();
+  return readDemo()
+    .filter((b) => b.endsAt > now && b.startsAt < now + 86400000)
+    .sort((a, b) => a.startsAt - b.startsAt)
+    .map((b) => ({
+      roomId: b.roomId,
+      startsAt: b.startsAt,
+      endsAt: b.endsAt,
+      mine: b.userId === me,
+    }));
 }

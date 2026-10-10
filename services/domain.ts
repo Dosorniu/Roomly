@@ -45,16 +45,49 @@ export function expire(state: StudyState, now: number): StudyState {
     ],
   };
 }
+const hhmm = (t: number) =>
+  new Date(t).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+// Someone else's booking that overlaps [from, to), earliest first.
+export function blockingReservation(
+  state: StudyState,
+  roomId: string,
+  from: number,
+  to: number,
+) {
+  return (state.reservations ?? [])
+    .filter(
+      (r) =>
+        r.roomId === roomId && !r.mine && r.endsAt > from && r.startsAt < to,
+    )
+    .sort((a, b) => a.startsAt - b.startsAt)[0];
+}
 export function viewRoom(state: StudyState, room: Room, now: number): RoomView {
   const session = state.sessions.find(
     (s) => s.roomId === room.id && s.expectedEnd > now,
   );
-  // Product model: a room is Free unless someone has an active session in it.
-  // No active check-in means the room is available right now.
+  // A booking running right now. Someone else's makes the room occupied; your
+  // own leaves it free for you so you can check in.
+  const reservation = session
+    ? undefined
+    : (state.reservations ?? []).find(
+        (r) => r.roomId === room.id && r.startsAt <= now && r.endsAt > now,
+      );
+  // Product model: a room is Free unless someone has an active session in it
+  // or someone else has booked it for right now.
   return {
     room,
     session,
-    status: session ? (session.openToShare ? "share" : "occupied") : "free",
+    reservation,
+    status: session
+      ? session.openToShare
+        ? "share"
+        : "occupied"
+      : reservation && !reservation.mine
+        ? "occupied"
+        : "free",
     count: session
       ? (session.occupantCount ??
         state.memberships.filter((m) => m.sessionId === session.id).length)
@@ -91,6 +124,20 @@ export function applyCommand(
   if (cmd.type === "checkIn" || cmd.type === "join") {
     if (state.memberships.some((m) => m.userId === cmd.userId))
       throw Error("Leave your current room before joining another.");
+  }
+  if (cmd.type === "checkIn" || cmd.type === "update") {
+    const block = blockingReservation(
+      state,
+      room.id,
+      now,
+      now + cmd.minutes * 60_000,
+    );
+    if (block)
+      throw Error(
+        block.startsAt <= now
+          ? `This room is reserved until ${hhmm(block.endsAt)}.`
+          : `This room is booked from ${hhmm(block.startsAt)}. Choose a shorter stay.`,
+      );
   }
   if (cmd.type === "checkIn") {
     if (s)
