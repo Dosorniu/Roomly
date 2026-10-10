@@ -50,8 +50,8 @@ const hhmm = (t: number) =>
     hour: "2-digit",
     minute: "2-digit",
   });
-// Someone else's booking that overlaps [from, to), earliest first.
-export function blockingReservation(
+// Someone else's bookings that overlap [from, to), earliest first.
+function othersReservations(
   state: StudyState,
   roomId: string,
   from: number,
@@ -62,14 +62,33 @@ export function blockingReservation(
       (r) =>
         r.roomId === roomId && !r.mine && r.endsAt > from && r.startsAt < to,
     )
-    .sort((a, b) => a.startsAt - b.startsAt)[0];
+    .sort((a, b) => a.startsAt - b.startsAt);
+}
+// A private booking by someone else blocks check-in for that time.
+export function blockingReservation(
+  state: StudyState,
+  roomId: string,
+  from: number,
+  to: number,
+) {
+  return othersReservations(state, roomId, from, to).find((r) => !r.share);
+}
+// A shared booking by someone else lets you in, but only open to others.
+export function sharedReservation(
+  state: StudyState,
+  roomId: string,
+  from: number,
+  to: number,
+) {
+  return othersReservations(state, roomId, from, to).find((r) => r.share);
 }
 export function viewRoom(state: StudyState, room: Room, now: number): RoomView {
   const session = state.sessions.find(
     (s) => s.roomId === room.id && s.expectedEnd > now,
   );
-  // A booking running right now. Someone else's makes the room occupied; your
-  // own leaves it free for you so you can check in.
+  // A booking running right now. Someone else's makes the room occupied (or
+  // open to share when booked with "Others can join"); your own leaves it free
+  // for you so you can check in.
   const reservation = session
     ? undefined
     : (state.reservations ?? []).find(
@@ -86,7 +105,9 @@ export function viewRoom(state: StudyState, room: Room, now: number): RoomView {
         ? "share"
         : "occupied"
       : reservation && !reservation.mine
-        ? "occupied"
+        ? reservation.share
+          ? "share"
+          : "occupied"
         : "free",
     count: session
       ? (session.occupantCount ??
@@ -125,7 +146,26 @@ export function applyCommand(
     if (state.memberships.some((m) => m.userId === cmd.userId))
       throw Error("Leave your current room before joining another.");
   }
+  // The booker arriving while someone already sits in their shared room joins
+  // that session instead of starting a new one.
+  const bookedHere = (state.reservations ?? []).some(
+    (r) =>
+      r.roomId === room.id && r.mine && r.startsAt <= now && r.endsAt > now,
+  );
+  if (cmd.type === "checkIn" && s && bookedHere)
+    return applyCommand(
+      state,
+      catalog,
+      { type: "join", roomId: cmd.roomId, userId: cmd.userId },
+      now,
+      id,
+    );
   if (cmd.type === "checkIn" || cmd.type === "update") {
+    if (
+      !cmd.openToShare &&
+      sharedReservation(state, room.id, now, now + cmd.minutes * 60_000)
+    )
+      throw Error("This room is booked as shared. Keep it open to others.");
     const block = blockingReservation(
       state,
       room.id,
@@ -144,14 +184,6 @@ export function applyCommand(
       throw Error(
         "Someone has already checked in. Please review the updated room.",
       );
-    const observedFree = state.observations.some(
-      (o) =>
-        o.roomId === room.id &&
-        o.status === "free" &&
-        now - o.updatedAt < FREE_FRESHNESS_MS,
-    );
-    if (!observedFree && !cmd.confirmedEmpty)
-      throw Error("Confirm the room is empty in person before checking in.");
     state.sessions.push({
       id,
       roomId: room.id,

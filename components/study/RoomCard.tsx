@@ -24,7 +24,7 @@ export function RoomCard({ view }: { view: RoomView }) {
         </div>
         <StatusBadge
           status={status}
-          label={reserved ? "Reserved" : undefined}
+          label={reserved && !reservation!.share ? "Reserved" : undefined}
         />
       </div>
       <div className="rc-foot">

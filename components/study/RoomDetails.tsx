@@ -47,8 +47,12 @@ export function RoomDetails({
   const [modal, setModal] = useState<"checkIn" | "update" | null>(null);
   const [busy, setBusy] = useState(false);
   const { room, status, session, count, reservation } = view;
-  // A booking running now: someone else's blocks the room; your own is yours to use.
-  const reservedByOther = !!reservation && !reservation.mine;
+  // A booking running now: someone else's blocks the room (or, when booked with
+  // "Others can join", lets you check in alongside); your own is yours to use.
+  const reservedByOther =
+    !!reservation && !reservation.mine && !reservation.share;
+  const sharedBooking =
+    !!reservation && !reservation.mine && !!reservation.share;
   const myReservation = !!reservation && reservation.mine;
   const floor = floors.find((f) => f.id === room.floorId)!;
   const building = buildings.find((b) => b.id === floor.buildingId)!;
@@ -115,7 +119,7 @@ export function RoomDetails({
               <span>
                 {session
                   ? "estimated session end"
-                  : reservedByOther
+                  : reservedByOther || sharedBooking
                     ? "reserved until"
                     : myReservation
                       ? "your booking ends"
@@ -160,15 +164,17 @@ export function RoomDetails({
                 : "You’ve joined this room."
               : reservedByOther
                 ? "This room is booked."
-                : myReservation
-                  ? "Your booking is running."
-                  : status === "free"
-                    ? "A space of your own."
-                    : status === "share"
-                      ? "A table worth sharing."
-                      : status === "occupied"
-                        ? "A session is in progress."
-                        : "No recent update."}
+                : sharedBooking
+                  ? "Booked, open to share."
+                  : myReservation
+                    ? "Your booking is running."
+                    : status === "free"
+                      ? "A space of your own."
+                      : status === "share"
+                        ? "A table worth sharing."
+                        : status === "occupied"
+                          ? "A session is in progress."
+                          : "No recent update."}
           </h2>
           <p>
             {member
@@ -177,15 +183,17 @@ export function RoomDetails({
                 : "The room holder manages the end time and sharing preference."
               : reservedByOther
                 ? `Someone reserved it until ${timeLabel(reservation!.endsAt)}. Pick a free slot in the calendar below.`
-                : myReservation
-                  ? "Check in when you arrive so others see the room is in use."
-                  : status === "free"
-                    ? "Already here? Check in so others know the room is in use."
-                    : status === "share"
-                      ? "Join if you are here and there is a seat available."
-                      : status === "occupied"
-                        ? "This room is currently closed to additional participants."
-                        : "Check the room in person before starting a session."}
+                : sharedBooking
+                  ? `Someone booked it until ${timeLabel(reservation!.endsAt)} and others can join. Check in if you are here.`
+                  : myReservation
+                    ? "Check in when you arrive so others see the room is in use."
+                    : status === "free"
+                      ? "Already here? Check in so others know the room is in use."
+                      : status === "share"
+                        ? "Join if you are here and there is a seat available."
+                        : status === "occupied"
+                          ? "This room is currently closed to additional participants."
+                          : "Check the room in person before starting a session."}
           </p>
 
           {shared && !canInteract && (
@@ -210,19 +218,22 @@ export function RoomDetails({
             </p>
           )}
 
-          {!member && (status === "free" || status === "unknown") && (
-            <button
-              className="primary-button full"
-              disabled={canInteract && other}
-              onClick={() => {
-                if (requireInteractionAccess()) setModal("checkIn");
-              }}
-            >
-              <DoorOpen size={18} /> Check In
-            </button>
-          )}
+          {!member &&
+            (status === "free" ||
+              status === "unknown" ||
+              (sharedBooking && !session)) && (
+              <button
+                className="primary-button full"
+                disabled={canInteract && other}
+                onClick={() => {
+                  if (requireInteractionAccess()) setModal("checkIn");
+                }}
+              >
+                <DoorOpen size={18} /> Check In
+              </button>
+            )}
 
-          {!member && status === "share" && (
+          {!member && status === "share" && !!session && (
             <button
               className="primary-button full"
               disabled={

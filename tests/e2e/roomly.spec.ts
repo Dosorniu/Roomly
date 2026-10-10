@@ -110,5 +110,39 @@ test("My bookings page shows the empty state by default", async ({ page }) => {
   // Demo mode starts with no reservations.
   await expect(page.getByText("No upcoming bookings")).toBeVisible();
   // The nav link to bookings is present in the header.
-  await expect(page.getByRole("link", { name: "My bookings" }).first()).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "My bookings" }).first(),
+  ).toBeVisible();
+});
+
+test("check-in works on a room with no recent update — no confirmation step", async ({
+  page,
+}) => {
+  await page.goto("/rooms/321");
+  await page.getByRole("button", { name: "Check In", exact: true }).click();
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Confirm Check In", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Leave Room", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Leave Room", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Check In", exact: true }),
+  ).toBeVisible();
+});
+
+test("a calendar booking can be shared with others", async ({ page }) => {
+  await page.goto("/rooms/214");
+  await page
+    .locator(".bkslot, button", { hasText: /^Free$/ })
+    .first()
+    .click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByText("Can others join you?")).toBeVisible();
+  await sheet.getByRole("switch").click();
+  await expect(sheet.getByText("Yes — Open to Share")).toBeVisible();
+  await sheet.getByRole("button", { name: "Confirm booking" }).click();
+  await expect(page.locator(".bkblock.mine")).toContainText("open");
 });

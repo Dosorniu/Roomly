@@ -28,7 +28,8 @@ export function isStudyState(value: unknown): value is StudyState {
           timestamp(r.startsAt) &&
           timestamp(r.endsAt) &&
           r.endsAt > r.startsAt &&
-          (r.mine === undefined || typeof r.mine === "boolean"),
+          (r.mine === undefined || typeof r.mine === "boolean") &&
+          (r.share === undefined || typeof r.share === "boolean"),
       )
     )
   )

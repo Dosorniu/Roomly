@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import type { RoomView } from "@/types/domain";
 import type { Command } from "@/services/domain";
 export function CheckInModal({
@@ -33,12 +32,15 @@ export function CheckInModal({
 }) {
   const [duration, setDuration] = useState("60");
   const [custom, setCustom] = useState("90");
-  const [sharing, setSharing] = useState(view.session?.openToShare ?? true);
-  const [confirmed, setConfirmed] = useState(false);
+  // Someone else's booking with "Others can join" is running: you may use the
+  // room, but your session has to stay open to others.
+  const sharedBooking =
+    !!view.reservation && !view.reservation.mine && !!view.reservation.share;
+  const [choice, setSharing] = useState(view.session?.openToShare ?? true);
+  const sharing = sharedBooking || choice;
   const [busy, setBusy] = useState(false);
   const minutes = Number(duration === "custom" ? custom : duration);
   const valid = Number.isFinite(minutes) && minutes >= 1 && minutes <= 480;
-  const unknown = view.status === "unknown";
   return (
     <Dialog
       open
@@ -71,7 +73,6 @@ export function CheckInModal({
               userId,
               minutes,
               openToShare: sharing,
-              confirmedEmpty: confirmed,
             });
             setBusy(false);
             if (ok) onClose();
@@ -111,30 +112,28 @@ export function CheckInModal({
           <div className="switch-row">
             <div>
               <label htmlFor="share-choice">Can others join you?</label>
-              <p>{sharing ? "Yes — Open to Share" : "No — Occupied"}</p>
+              <p>
+                {sharedBooking
+                  ? "Yes — this room is booked as shared"
+                  : sharing
+                    ? "Yes — Open to Share"
+                    : "No — Occupied"}
+              </p>
             </div>
             <Switch
               id="share-choice"
               checked={sharing}
+              disabled={sharedBooking}
               onCheckedChange={setSharing}
             />
           </div>
-          {unknown && !editing && (
-            <label className="confirm-row">
-              <Checkbox
-                checked={confirmed}
-                onCheckedChange={(v) => setConfirmed(v === true)}
-              />
-              <span>I am here and have checked that the room is empty.</span>
-            </label>
-          )}
           <p className="small-note">
-            Your session expires automatically. Availability then becomes
-            Unknown until someone confirms it.
+            Your session ends automatically at the time you choose, and the room
+            shows as Free again.
           </p>
           <button
             className="primary-button full"
-            disabled={busy || !valid || (unknown && !editing && !confirmed)}
+            disabled={busy || !valid}
             type="submit"
           >
             {busy ? "Saving…" : editing ? "Save changes" : "Confirm Check In"}

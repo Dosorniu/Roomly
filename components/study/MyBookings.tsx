@@ -9,10 +9,28 @@ import { myBookings, cancelBooking } from "@/services/bookings";
 import type { MyBooking } from "@/types/domain";
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
-const WD = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const WD = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
 const fmt = (ms: number) => {
   const d = new Date(ms);
@@ -124,16 +142,16 @@ export function MyBookings({
   return (
     <section className="mybookings">
       <Link href="/" className="back-link">
-        <ArrowRight size={17} style={{ transform: "rotate(180deg)" }} /> All study
-        spaces
+        <ArrowRight size={17} style={{ transform: "rotate(180deg)" }} /> All
+        study spaces
       </Link>
 
       <header className="mb-head">
         <span className="eyebrow">YOUR CAMPUS, AT A GLANCE</span>
         <h1>My bookings</h1>
         <p className="intro-description">
-          Every room you have reserved, with the soonest first. Cancel any slot to
-          free the room for others.
+          Every room you have reserved, with the soonest first. Cancel any slot
+          to free the room for others.
         </p>
       </header>
 
@@ -175,8 +193,8 @@ export function MyBookings({
           </div>
           <h2>No upcoming bookings</h2>
           <p>
-            You haven’t reserved any rooms yet. Open a room and pick a free slot in
-            its Availability calendar.
+            You haven’t reserved any rooms yet. Open a room and pick a free slot
+            in its Availability calendar.
           </p>
           <Link href="/" className="primary-button">
             Browse rooms
@@ -198,7 +216,10 @@ export function MyBookings({
                         <div className="mb-main">
                           <div className="mb-room">
                             {r.room ? (
-                              <Link href={roomPath(r.room)} className="mb-roomname">
+                              <Link
+                                href={roomPath(r.room)}
+                                className="mb-roomname"
+                              >
                                 {r.name} · {r.number}
                               </Link>
                             ) : (
@@ -213,6 +234,12 @@ export function MyBookings({
                               {fmt(b.startsAt)}–{fmt(b.endsAt)}
                               <i className="mb-dot" />
                               {durTxt(b.endsAt - b.startsAt)}
+                              {b.share && (
+                                <>
+                                  <i className="mb-dot" />
+                                  Others can join
+                                </>
+                              )}
                             </span>
                             {r.location && (
                               <span>
@@ -241,8 +268,8 @@ export function MyBookings({
       )}
 
       <p className="small-note mb-note">
-        Bookings hold the whole room for the slot. Opening hours run 08:00–20:00,
-        Monday to Friday. Times are shown in your local timezone.
+        Bookings hold the whole room for the slot. Opening hours run
+        08:00–20:00, Monday to Friday. Times are shown in your local timezone.
       </p>
     </section>
   );
