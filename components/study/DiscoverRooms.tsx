@@ -59,8 +59,7 @@ export function DiscoverRooms(p: Props) {
     p.floor !== "all" ||
     p.capacity !== "all" ||
     p.type !== "all" ||
-    p.status === "occupied" ||
-    p.status === "unknown";
+    p.status === "occupied";
   const title = p.query.trim()
     ? "Search results"
     : p.status === "free"
@@ -132,8 +131,8 @@ export function DiscoverRooms(p: Props) {
       {closed && (
         <div className="closed-banner" role="note">
           <span className="closed-dot" />
-          Campus is closed right now — rooms are open Mon–Fri, 08:00–20:00. You can
-          still book a slot ahead of time.
+          Campus is closed right now. Bookings are available Mon–Fri,
+          08:00–20:00 — you can book a slot ahead of time.
         </div>
       )}
       <section className="discovery-intro">
@@ -187,7 +186,7 @@ export function DiscoverRooms(p: Props) {
                 <EmptyTitle>No matching rooms</EmptyTitle>
                 <EmptyDescription>
                   {p.status === "free" && !p.query
-                    ? "No rooms are confirmed free right now. View all rooms to check shared or unconfirmed spaces."
+                    ? "No rooms are free right now. View all rooms to find a shared space, or book a slot for later."
                     : "Try another search or broaden your filters."}
                 </EmptyDescription>
               </EmptyHeader>
@@ -205,8 +204,8 @@ export function DiscoverRooms(p: Props) {
         </div>
         <div className="list-tools">
           <span aria-live="polite">
-            {p.views.length} {p.views.length === 1 ? "space" : "spaces"} ·
-            Student-reported
+            {p.views.length} {p.views.length === 1 ? "space" : "spaces"} · Live
+            status
           </span>
           <button
             className="text-button filter-toggle"
@@ -268,7 +267,6 @@ export function DiscoverRooms(p: Props) {
                 <SelectItem value="free">Free</SelectItem>
                 <SelectItem value="share">Open to Share</SelectItem>
                 <SelectItem value="occupied">Occupied</SelectItem>
-                <SelectItem value="unknown">Unknown</SelectItem>
               </SelectContent>
             </Select>
             {active && (

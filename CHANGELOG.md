@@ -248,3 +248,35 @@ then add the access code once in the SQL Editor.
 
 Tests: database test covers a university address needing the access code and
 case-insensitive codes.
+
+## Update 09 — Availability alerts and consistent texts
+
+Author: Maks (AI-assisted, Claude)
+Date: 2026-10-11
+
+Fixed:
+
+- "Notify me when free" now also fires when a room frees up by itself: a
+  check-in that runs out or a booking that ends. Previously watchers were alerted
+  only when the last person pressed Leave Room. A room counts as free when no one
+  is checked in and no booking is running; each ended booking alerts once.
+- Removed the "Unknown" status filter: rooms are never Unknown any more, so it
+  always showed an empty list.
+
+Changed (texts that contradicted the current logic):
+
+- Menu → How it works: replaced "Unknown means unconfirmed…" with how rooms free
+  up automatically.
+- Guide: statuses are free, open to sharing, in use or reserved; alerts also come
+  when a check-in or booking ends.
+- Room page: removed "Student-reported estimates, not bookings" (bookings exist).
+- Closed-campus banner: Mon–Fri 08:00–20:00 applies to bookings; check-in is not
+  limited by time.
+- Room list: "Live status" instead of "Student-reported"; empty state and
+  notifications panel no longer mention unconfirmed rooms.
+
+Database: run `supabase/migrations/202610110011_notify_when_free.sql`
+(safe to re-run).
+
+Tests: database test covers alerts on check-in expiry and when a booking ends
+(once).
