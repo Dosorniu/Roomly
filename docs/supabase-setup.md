@@ -22,6 +22,7 @@ Run the committed SQL files in filename order on a fresh project:
 7. `supabase/migrations/202610050007_my_bookings.sql`
 8. `supabase/migrations/202610100008_reservations_privacy.sql`
 9. `supabase/migrations/202610100009_free_checkin_shared_bookings.sql`
+10. `supabase/migrations/202610110010_access_code_for_everyone.sql`
 
 The migrations create:
 
@@ -80,10 +81,11 @@ email has already been approved.
 
 ## Campus access codes
 
-Access is granted by university email domain. A verified `@cbs-mail.de` address
-is approved automatically with no code. Reviewers and team members without a
-university address receive personal single-use codes, provisioned in Supabase
-and never stored in the repository. The earlier shared code has been disabled.
+Any email address can receive a sign-in code. Every new account then enters the
+shared demo access code once (university addresses included); approved accounts
+skip this step afterwards. The code lives only in Supabase
+(`roomly_private.invite_codes`, unlimited uses) and is never stored in the
+repository. It is entered case-insensitively (the form upper-cases it).
 
 Create or rotate a campus code in Supabase SQL, for example:
 
@@ -137,17 +139,17 @@ The live project is configured with:
 
 ## Custom SMTP
 
-Custom SMTP is enabled in **Authentication → Emails → SMTP Settings** using the
-project-only Gmail sender:
+Custom SMTP is enabled in **Authentication → Emails → SMTP Settings** using
+Brevo's SMTP relay (`smtp-relay.brevo.com`, port 587) with the project sender
+`roomlysp@gmail.com`. Brevo rewrites a free-mail sender to its own
+`…brevosend.com` address. The Brevo SMTP key is stored only in Supabase and is not
+committed to GitHub. Delivery can be checked in **Brevo → Transactional → Logs**.
 
-```text
-Roomly <roomlysp@gmail.com>
-Host: smtp.gmail.com
-Port: 587
-```
-
-The Gmail App Password is stored only in Supabase SMTP settings and is not
-committed to GitHub. The ordinary Google account password is not used by Roomly.
+Known limitation: the university mailbox (Microsoft 365) moves Roomly emails to
+quarantine, so `@cbs-mail.de` addresses may not receive the code. For the demo,
+students sign in with any other address. Production use with university
+addresses needs the CBS IT team to allow the Roomly sender. Both email templates (Confirm sign up, Magic
+link or OTP) are in English and contain only the six-digit `{{ .Token }}` code.
 
 Before a larger presentation, review **Authentication → Rate Limits** and make
 sure the configured email/OTP limits cover the expected number of students plus
@@ -181,7 +183,7 @@ Before a class demo:
 - a new email receives a six-digit OTP from the Roomly project sender,
 - the OTP expires after 15 minutes,
 - a wrong guest code is rejected,
-- a verified `@cbs-mail.de` address is approved automatically,
+- a verified `@cbs-mail.de` address still needs the access code once,
 - a personal single-use guest code grants access once, then is spent,
 - a returning approved email skips the code step,
 - two independent browsers/devices see the same room status,

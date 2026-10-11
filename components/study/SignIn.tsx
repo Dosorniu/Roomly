@@ -5,11 +5,8 @@ import { getSupabase } from "@/services/supabase-client";
 
 type Stage = "email" | "otp" | "access";
 
-// University addresses are approved automatically. Anyone else needs a personal
-// guest code, so we check the domain BEFORE sending a sign-in code: a stranger
-// never gets an email, and a student who mistypes their address finds out at once.
-// (The server still enforces access — this check only saves a wasted email.)
-const UNIVERSITY_DOMAIN = "@cbs-mail.de";
+// One flow for everyone: any email receives a six-digit code, then a new account
+// enters the campus access code once. The server enforces access, not this form.
 
 export function SignIn({
   hasSession,
@@ -24,7 +21,6 @@ export function SignIn({
   const [stage, setStage] = useState<Stage>(hasSession ? "access" : "email");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [guest, setGuest] = useState(false);
 
   async function resetIdentity() {
     setBusy(true);
@@ -52,7 +48,7 @@ export function SignIn({
 
       if (stage === "access") {
         const { error: accessError } = await client.rpc("roomly_claim_access", {
-          invite_code: accessCode.trim(),
+          invite_code: accessCode.trim().toUpperCase(),
         });
         if (accessError) throw accessError;
         await onComplete();
@@ -78,12 +74,6 @@ export function SignIn({
       }
 
       const address = email.trim().toLowerCase();
-      if (!address.endsWith(UNIVERSITY_DOMAIN) && !guest) {
-        setError(
-          `Use your university email (…${UNIVERSITY_DOMAIN}). If you are a guest with a personal access code, tick “I have a guest code” below.`,
-        );
-        return;
-      }
       const result = await client.auth.signInWithOtp({
         email: address,
         options: {
@@ -104,9 +94,8 @@ export function SignIn({
       {stage === "email" && (
         <>
           <p>
-            Enter your university email ({UNIVERSITY_DOMAIN}). Roomly uses
-            passwordless sign-in, so you never create or share a password with
-            us.
+            Enter your email address and we&rsquo;ll send you a verification
+            code.
           </p>
           <label>
             Email
@@ -117,17 +106,8 @@ export function SignIn({
               value={email}
               disabled={busy}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={`name${UNIVERSITY_DOMAIN}`}
+              placeholder="name@example.com"
             />
-          </label>
-          <label className="signin-guest">
-            <input
-              type="checkbox"
-              checked={guest}
-              disabled={busy}
-              onChange={(e) => setGuest(e.target.checked)}
-            />
-            I have a guest code (no university email)
           </label>
         </>
       )}
@@ -135,9 +115,8 @@ export function SignIn({
       {stage === "otp" && (
         <>
           <p>
-            Check your inbox for the Roomly verification message. Enter the
-            six-digit code below. If the current email template still shows a
-            sign-in link, that link also works.
+            Check your inbox for the Roomly email and enter the six-digit code
+            below. No email after a minute? Look in your spam or junk folder.
           </p>
           <label>
             6-digit email code
@@ -161,12 +140,11 @@ export function SignIn({
       {stage === "access" && (
         <>
           <p>
-            Your email is verified, but it is not a university address. Enter
-            your personal guest code once to enable check-ins, bookings and
-            alerts on this account.
+            Your email is verified. Enter the campus access code once to enable
+            check-ins, bookings and alerts on this account.
           </p>
           <label>
-            Guest code
+            Access code
             <input
               type="text"
               autoComplete="off"
@@ -174,7 +152,7 @@ export function SignIn({
               value={accessCode}
               disabled={busy}
               onChange={(e) => setAccessCode(e.target.value)}
-              placeholder="ROOMLY-GUEST-..."
+              placeholder="Access code"
             />
           </label>
         </>

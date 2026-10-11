@@ -219,3 +219,32 @@ in the Supabase SQL Editor after merging (safe to re-run).
 
 Tests: domain and database tests cover check-in without confirmation, rooms
 returning to Free when a check-in or booking ends, and shared bookings.
+
+## Update 08 — One sign-in flow: email code, then access code
+
+Author: Maks (AI-assisted, Claude)
+Date: 2026-10-11
+
+Changed:
+
+- Back to the original sign-in: any email receives a six-digit code, then a new
+  account enters the demo access code once. Update 06 limited codes to
+  `@cbs-mail.de`, but the university mailbox (Microsoft 365) quarantines Roomly
+  emails, so new students never saw their code.
+- Automatic approval of `@cbs-mail.de` removed: everyone uses the access code.
+  Accounts already approved stay approved. The code is accepted in any letter
+  case and lives only in Supabase (not in the repo).
+- Removed the "I have a guest code" checkbox. The first step now reads "Enter
+  your email address and we'll send you a verification code."; the code screen
+  suggests checking the spam folder; the last step is "Access code".
+- Email templates (Confirm sign up, Magic link or OTP) switched to English
+  (Supabase dashboard).
+- Docs: SMTP section describes Brevo (it said Gmail SMTP); known limitation for
+  university addresses — production use needs the CBS IT team to allow the
+  Roomly sender.
+
+Database: run `supabase/migrations/202610110010_access_code_for_everyone.sql`,
+then add the access code once in the SQL Editor.
+
+Tests: database test covers a university address needing the access code and
+case-insensitive codes.

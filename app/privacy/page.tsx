@@ -32,9 +32,9 @@ export default function PrivacyPage() {
           <h2>What we collect</h2>
           <ul>
             <li>
-              <strong>Your email address</strong> — only to verify that you are
-              a CBS student (or a guest with a personal access code) and to send
-              a one-time sign-in code. We never ask for a password.
+              <strong>Your email address</strong> — only to send you a one-time
+              sign-in code. Access is unlocked once with the campus access code.
+              We never ask for a password.
             </li>
             <li>
               <strong>Room activity</strong> — your current check-in (which room
