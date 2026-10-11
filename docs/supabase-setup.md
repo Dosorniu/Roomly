@@ -23,6 +23,7 @@ Run the committed SQL files in filename order on a fresh project:
 8. `supabase/migrations/202610100008_reservations_privacy.sql`
 9. `supabase/migrations/202610100009_free_checkin_shared_bookings.sql`
 10. `supabase/migrations/202610110010_access_code_for_everyone.sql`
+11. `supabase/migrations/202610110011_notify_when_free.sql`
 
 The migrations create:
 

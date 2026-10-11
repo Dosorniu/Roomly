@@ -291,8 +291,8 @@ try {
   );
   assert.equal(
     (await snapshot(ids[2])).notices.length,
-    1,
-    "Expiration must not send a false Free alert",
+    2,
+    "a check-in that runs out frees the room and alerts watchers",
   );
   await db.query("update auth.users set email_confirmed_at=null where id=$1", [
     ids[0],
@@ -473,6 +473,10 @@ try {
   // Time: a check-in takes the room out of Free and gives it back when it ends;
   // a running booking does the same until its end.
   const t1 = Date.now();
+  await asUser(bk2, "select public.roomly_watch($1,true)", ["214"]);
+  await asUser(bk2, "select public.roomly_watch($1,true)", ["216"]);
+  const notices = async (room) =>
+    (await snapshot(bk2)).notices.filter((n) => n.roomId === room).length;
   await command(bk1, "checkIn", "214", 30, false);
   let snap = await snapshot(bk2);
   assert.ok(
@@ -488,6 +492,7 @@ try {
     !snap.state.sessions.some((x) => x.roomId === "214"),
     "an expired check-in disappears, so the room is Free again",
   );
+  assert.equal(await notices("214"), 1, "watchers are alerted on expiry");
   assert.ok(
     !(await snapshot(bk1)).state.memberships.length,
     "the student is no longer checked in after expiry",
@@ -509,6 +514,13 @@ try {
     !(await snapshot(bk2)).state.reservations.some((r) => r.roomId === "216"),
     "a finished booking no longer holds the room",
   );
+  assert.equal(
+    await notices("216"),
+    1,
+    "watchers are alerted when a booking ends",
+  );
+  await snapshot(bk2);
+  assert.equal(await notices("216"), 1, "an ended booking alerts only once");
 
   // Shared bookings ("Others can join").
   await db.query(
@@ -563,7 +575,7 @@ try {
   await command(bk2, "leave", "303");
 
   console.log(
-    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation, bookings (reserve, overlap, anonymity, cancel, campus hours, duration), reservations vs check-in, check-in without confirmation, Free again after expiry, shared bookings, one access-code flow for every email.",
+    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation, bookings (reserve, overlap, anonymity, cancel, campus hours, duration), reservations vs check-in, check-in without confirmation, Free again after expiry, shared bookings, one access-code flow for every email, alerts when a check-in or booking ends.",
   );
 } finally {
   await db.close();

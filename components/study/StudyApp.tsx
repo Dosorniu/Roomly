@@ -45,19 +45,12 @@ export function StudyApp({
     repository.getSnapshot,
     repository.getSnapshot,
   );
-  const {
-    ready,
-    now,
-    userId,
-    accessGranted,
-    watches,
-    notices,
-    error,
-  } = useSyncExternalStore(
-    sessionStore.subscribe,
-    sessionStore.getSnapshot,
-    sessionStore.getServerSnapshot,
-  );
+  const { ready, now, userId, accessGranted, watches, notices, error } =
+    useSyncExternalStore(
+      sessionStore.subscribe,
+      sessionStore.getSnapshot,
+      sessionStore.getServerSnapshot,
+    );
 
   const [floor, setFloor] = useState("all");
   const [query, setQuery] = useState("");
@@ -133,9 +126,7 @@ export function StudyApp({
       ),
   );
 
-  const selected = roomId
-    ? views.find((v) => v.room.id === roomId)
-    : undefined;
+  const selected = roomId ? views.find((v) => v.room.id === roomId) : undefined;
 
   const filtered = views.filter((v) => {
     const f = floors.find((f) => f.id === v.room.floorId)!;
@@ -344,8 +335,9 @@ export function StudyApp({
                 the room Free.
               </p>
               <p>
-                <strong>Unknown means unconfirmed.</strong> Sessions expire at
-                their end time. Free reports become Unknown after 30 minutes.
+                <strong>Rooms free up by themselves.</strong> When a check-in or
+                booking ends, the room shows Free again and watchers get an
+                alert.
               </p>
               <div className="demo-explainer">
                 <strong>
@@ -408,7 +400,7 @@ export function StudyApp({
                 ))}
               {!rooms.some((r) => watching(r.id)) && (
                 <p>
-                  No rooms watched yet. Open an occupied or unconfirmed room and
+                  No rooms watched yet. Open a room that is in use or booked and
                   choose “Notify me when free”.
                 </p>
               )}

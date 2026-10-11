@@ -292,8 +292,8 @@ export function RoomDetails({
 
           <div className="small-note session-disclaimer">
             {shared
-              ? "Student-reported estimates, not bookings. Room status is public; room actions require a verified account."
-              : "Student-reported estimates, not bookings. Demo changes are shared across tabs in this browser."}
+              ? "Room status is live and public. Check-ins are estimates set by students; room actions require a signed-in account."
+              : "Demo mode: changes stay in this browser and are shared across its tabs."}
           </div>
         </aside>
       </div>

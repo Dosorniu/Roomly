@@ -21,7 +21,7 @@ const sections = [
   {
     icon: Search,
     title: "Find a room",
-    body: "Search by name, number, building or floor, and filter by availability, capacity or room type. Each card shows the live status — free, in use, open to sharing, or unconfirmed — and how many people are inside.",
+    body: "Search by name, number, building or floor, and filter by availability, capacity or room type. Each card shows the live status — free, open to sharing, in use or reserved — and how many people are inside.",
   },
   {
     icon: DoorOpen,
@@ -41,7 +41,7 @@ const sections = [
   {
     icon: Bell,
     title: "Notifications",
-    body: "On an occupied or unconfirmed room, choose “Notify me when free”. When the room frees up you get an in-app alert — these are saved to your account, not push notifications or email. Manage the rooms you watch from the notifications panel.",
+    body: "On a room that is in use or booked, choose “Notify me when free”. When the room frees up — someone leaves, a check-in runs out or a booking ends — you get an in-app alert — these are saved to your account, not push notifications or email. Manage the rooms you watch from the notifications panel.",
   },
   {
     icon: ShieldCheck,
