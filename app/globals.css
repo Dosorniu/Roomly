@@ -2018,3 +2018,47 @@ a.mb-roomname:hover {
 .sheet .sheet-share{padding:4px 0 14px;margin-bottom:12px}
 .sheet .sheet-share label{font-weight:var(--weight-control)}
 .sheet .sheet-share p{color:var(--muted-foreground);margin:3px 0 0}
+
+/* My bookings: current check-in. */
+.mb-now {
+  margin-bottom: 26px;
+}
+.mb-card-now {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+}
+.mb-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.mb-actions a.mb-cancel {
+  text-decoration: none;
+}
+.mb-actions a.mb-cancel:hover {
+  border-color: color-mix(in srgb, var(--primary) 60%, var(--border));
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+}
+@media (max-width: 560px) {
+  .mb-actions {
+    justify-content: stretch;
+  }
+  .mb-actions > * {
+    flex: 1 1 0;
+  }
+}
+.session-reminder a {
+  color: inherit;
+  font-weight: var(--weight-control);
+  text-decoration: underline;
+}
+.menu-new {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: var(--weight-control);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}

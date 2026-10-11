@@ -2,11 +2,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { CalendarClock, Clock, MapPin, X, ArrowRight } from "lucide-react";
+import {
+  CalendarClock,
+  Clock,
+  MapPin,
+  X,
+  ArrowRight,
+  DoorOpen,
+  LogOut,
+  Users,
+} from "lucide-react";
 import { rooms, floors, buildings } from "@/data/catalog";
 import { roomPath } from "@/services/routes";
 import { myBookings, cancelBooking } from "@/services/bookings";
-import type { MyBooking } from "@/types/domain";
+import type { MyBooking, RoomView } from "@/types/domain";
 
 const MONTHS = [
   "January",
@@ -73,12 +82,19 @@ export function MyBookings({
   canInteract,
   shared,
   onRequireAuth,
+  current,
+  onLeave,
 }: {
   canInteract: boolean;
   shared: boolean;
   onRequireAuth: () => void;
+  // The room you are checked into right now, if any.
+  current?: RoomView;
+  onLeave: (roomId: string) => Promise<boolean>;
 }) {
   const [items, setItems] = useState<MyBooking[]>([]);
+  const [leaving, setLeaving] = useState(false);
+  const [cancelling, setCancelling] = useState<MyBooking | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -121,6 +137,7 @@ export function MyBookings({
     try {
       await cancelBooking(id);
       await load();
+      setCancelling(null);
       toast.success("Reservation cancelled.");
     } catch (e) {
       toast.error(
@@ -147,13 +164,65 @@ export function MyBookings({
       </Link>
 
       <header className="mb-head">
-        <span className="eyebrow">YOUR CAMPUS, AT A GLANCE</span>
+        <span className="eyebrow">YOUR ROOMS</span>
         <h1>My bookings</h1>
         <p className="intro-description">
-          Every room you have reserved, with the soonest first. Cancel any slot
-          to free the room for others.
+          Where you are checked in right now, and every room you have reserved,
+          soonest first.
         </p>
       </header>
+
+      {canInteract && current?.session && (
+        <section className="mb-now" aria-labelledby="mb-now-title">
+          <h2 className="mb-dayhdr" id="mb-now-title">
+            Checked in now
+          </h2>
+          <article className="mb-card mb-card-now">
+            <div className="mb-main">
+              <div className="mb-room">
+                <Link href={roomPath(current.room)} className="mb-roomname">
+                  {current.room.name} · {current.room.number}
+                </Link>
+              </div>
+              <div className="mb-meta">
+                <span>
+                  <Clock size={15} />
+                  Until {fmt(current.session.expectedEnd)}
+                  <i className="mb-dot" />
+                  {current.session.openToShare ? "Others can join" : "Just you"}
+                </span>
+                <span>
+                  <Users size={15} />
+                  {current.count} / {current.room.capacity} inside
+                </span>
+                {roomOf(current.room.id).location && (
+                  <span>
+                    <MapPin size={15} />
+                    {roomOf(current.room.id).location}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="mb-actions">
+              <Link href={roomPath(current.room)} className="mb-cancel">
+                <DoorOpen size={16} /> Open room
+              </Link>
+              <button
+                className="mb-cancel"
+                disabled={leaving}
+                onClick={async () => {
+                  setLeaving(true);
+                  await onLeave(current.room.id);
+                  setLeaving(false);
+                }}
+              >
+                <LogOut size={16} />
+                {leaving ? "Leaving…" : "Leave"}
+              </button>
+            </div>
+          </article>
+        </section>
+      )}
 
       {shared && !canInteract ? (
         <div className="mb-empty">
@@ -252,7 +321,7 @@ export function MyBookings({
                         <button
                           className="mb-cancel"
                           disabled={busy === b.id}
-                          onClick={() => onCancel(b.id)}
+                          onClick={() => setCancelling(b)}
                           aria-label={`Cancel booking for ${r.name}`}
                         >
                           <X size={16} />
@@ -268,9 +337,47 @@ export function MyBookings({
       )}
 
       <p className="small-note mb-note">
-        Bookings hold the whole room for the slot. Opening hours run
-        08:00–20:00, Monday to Friday. Times are shown in your local timezone.
+        Rooms can be booked Monday to Friday, 08:00–20:00. A booking holds the
+        whole room unless you let others join. A check-in is not a booking — it
+        ends automatically at the time you chose. Times are shown in your local
+        timezone.
       </p>
+
+      {cancelling && (
+        <div
+          className="sheet-back"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCancelling(null);
+          }}
+        >
+          <div className="sheet" role="dialog" aria-modal="true">
+            <h3>Cancel this booking?</h3>
+            <p className="s-sub">
+              {roomOf(cancelling.roomId).name} ·{" "}
+              {roomOf(cancelling.roomId).number},{" "}
+              {dayLabel(cancelling.startsAt)}, {fmt(cancelling.startsAt)}–
+              {fmt(cancelling.endsAt)}
+            </p>
+            <p className="s-sub">The slot becomes free for others to book.</p>
+            <div className="sheet-actions">
+              <button
+                className="s-cancel"
+                onClick={() => setCancelling(null)}
+                disabled={busy !== null}
+              >
+                Keep booking
+              </button>
+              <button
+                className="s-go"
+                onClick={() => onCancel(cancelling.id)}
+                disabled={busy !== null}
+              >
+                Cancel booking
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

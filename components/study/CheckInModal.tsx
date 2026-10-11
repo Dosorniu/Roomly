@@ -30,8 +30,19 @@ export function CheckInModal({
   onClose: () => void;
   onSubmit: (command: Command) => Promise<boolean>;
 }) {
-  const [duration, setDuration] = useState("60");
-  const [custom, setCustom] = useState("90");
+  // When updating, start from the time actually left in the session.
+  const [initial] = useState(() => {
+    if (!editing || !view.session) return { duration: "60", custom: "90" };
+    const left = Math.min(
+      480,
+      Math.max(1, Math.round((view.session.expectedEnd - Date.now()) / 60000)),
+    );
+    return ["30", "60", "120"].includes(String(left))
+      ? { duration: String(left), custom: "90" }
+      : { duration: "custom", custom: String(left) };
+  });
+  const [duration, setDuration] = useState(initial.duration);
+  const [custom, setCustom] = useState(initial.custom);
   // Someone else's booking with "Others can join" is running: you may use the
   // room, but your session has to stay open to others.
   const sharedBooking =

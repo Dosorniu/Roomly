@@ -13,7 +13,8 @@ import {
   DoorOpen,
   Check,
 } from "lucide-react";
-import { floors, buildings } from "@/data/catalog";
+import { floors, buildings, rooms } from "@/data/catalog";
+import { roomPath } from "@/services/routes";
 import type { RoomView, StudyState } from "@/types/domain";
 import type { Command } from "@/services/domain";
 import { StatusBadge } from "./StatusBadge";
@@ -63,6 +64,18 @@ export function RoomDetails({
     );
   const holder = session?.holderId === userId;
   const other = state.memberships.some((m) => m.userId === userId) && !member;
+  // The room you are checked into elsewhere, so the hint can name and link it.
+  const otherRoom = other
+    ? rooms.find(
+        (r) =>
+          r.id ===
+          state.sessions.find((s) =>
+            state.memberships.some(
+              (m) => m.userId === userId && m.sessionId === s.id,
+            ),
+          )?.roomId,
+      )
+    : undefined;
 
   const requireInteractionAccess = () => {
     if (canInteract) return true;
@@ -205,8 +218,17 @@ export function RoomDetails({
           )}
           {other && (
             <p className="session-reminder">
-              You are registered in another room. Leave it before checking in
-              here.
+              {otherRoom ? (
+                <>
+                  You are checked in to{" "}
+                  <Link href={roomPath(otherRoom)}>
+                    {otherRoom.name} · {otherRoom.number}
+                  </Link>
+                  . Leave it before checking in here.
+                </>
+              ) : (
+                "You are checked in to another room. Leave it before checking in here."
+              )}
             </p>
           )}
 
