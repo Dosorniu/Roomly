@@ -44,8 +44,8 @@ interface Props {
 }
 export function DiscoverRooms(p: Props) {
   const [expanded, setExpanded] = useState(false);
-  // Campus opening hours (Mon–Fri, 08:00–20:00). Computed after mount to avoid a
-  // server/client time mismatch; explains why nothing reads as "Free now" off-hours.
+  // Booking hours (Mon–Fri, 08:00–20:00). Computed after mount to avoid a
+  // server/client time mismatch; the banner explains them outside those hours.
   const [closed, setClosed] = useState(false);
   useEffect(() => {
     const id = requestAnimationFrame(() => {

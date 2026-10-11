@@ -1,4 +1,6 @@
-export type Status = "free" | "share" | "occupied" | "unknown";
+// A room is Free unless someone is checked in or someone else's booking is
+// running right now.
+export type Status = "free" | "share" | "occupied";
 export interface University {
   id: string;
   name: string;
@@ -51,6 +53,8 @@ export interface RoomMembership {
   userId: string;
   joinedAt: number;
 }
+// Raw server observations (last leave / expiry). They do not affect a room's
+// Status, which is derived only from sessions and reservations.
 export interface Observation {
   roomId: string;
   status: "free" | "unknown";

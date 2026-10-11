@@ -280,3 +280,27 @@ Database: run `supabase/migrations/202610110011_notify_when_free.sql`
 
 Tests: database test covers alerts on check-in expiry and when a booking ends
 (once).
+
+## Update 10 — No false "free" alert, code cleanup
+
+Author: Maks (AI-assisted, Claude)
+Date: 2026-10-11
+
+Fixed:
+
+- Leave Room no longer sends a "now free" alert while someone else's booking is
+  running in that room; the alert comes when the booking ends.
+
+Removed (internal cleanup, no visible change):
+
+- The unused `BuildingHeroVisual` component and its CSS.
+- The "Unknown" room status from the code: its type value, badge label, colour
+  token, contrast check and unreachable UI branches. Rooms are Free, Open to
+  Share or Occupied; raw server observations are kept but no longer affect
+  status.
+
+Database: run `supabase/migrations/202610110012_leave_alert_only_when_free.sql`
+(safe to re-run).
+
+Tests: database test covers leaving during a running booking (no alert) and
+the alert when that booking ends.

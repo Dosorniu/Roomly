@@ -405,107 +405,6 @@ h2 {
   color: var(--secondary-foreground);
   font-weight: var(--weight-heading);
 }
-.building-hero {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: start;
-  margin: 0 -2vw 0 0;
-  position: sticky;
-  top: 24px;
-  min-width: 0;
-  padding-top: 0;
-}
-.building-hero img {
-  width: 100%;
-  height: auto;
-  display: block;
-  max-height: 770px;
-  object-fit: contain;
-  mix-blend-mode: multiply;
-}
-.building-hero figcaption {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 12px 6% 0;
-  color: var(--muted-foreground);
-  font-size: 0.75rem;
-}
-.building-hero figcaption > span:first-child {
-  letter-spacing: 2.5px;
-  font-size: 0.7rem;
-}
-.dark .building-hero img {
-  filter: invert(1);
-  mix-blend-mode: screen;
-  opacity: 0.72;
-}
-/* Live building summary (replaces the decorative banner) */
-.building-hero-top {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 14px;
-}
-.building-hero-name {
-  letter-spacing: 2.5px;
-  font-size: 0.7rem;
-  font-weight: var(--weight-heading);
-  color: var(--muted-foreground);
-}
-.building-hero-meta {
-  font-size: 0.75rem;
-  color: var(--muted-foreground);
-}
-.building-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.building-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-  padding: 15px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
-  cursor: pointer;
-  text-align: left;
-  transition:
-    border-color 0.15s,
-    background 0.15s;
-}
-.building-stat:hover:not(:disabled) {
-  border-color: var(--muted-foreground);
-}
-.building-stat:disabled {
-  cursor: default;
-}
-.building-stat strong {
-  font-size: 1.75rem;
-  font-weight: var(--weight-headline);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-.building-stat span {
-  font-size: 0.8125rem;
-  color: var(--muted-foreground);
-  font-weight: var(--weight-control);
-}
-.building-stat.active {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 10%, var(--card));
-}
-.building-stat.stat-free strong {
-  color: var(--free);
-}
-.building-stat.stat-free.active {
-  border-color: var(--free);
-  background: color-mix(in srgb, var(--free) 12%, var(--card));
-}
 .room-section {
   grid-column: 1;
   grid-row: 2;
@@ -661,10 +560,6 @@ h2 {
 .status.occupied {
   color: var(--occupied);
   background: color-mix(in srgb, var(--occupied) 15%, transparent);
-}
-.status.unknown {
-  color: var(--unknown);
-  background: color-mix(in srgb, var(--unknown) 15%, transparent);
 }
 .row-time {
   font-size: 0.75rem;
@@ -1091,9 +986,6 @@ footer {
   border-color: var(--border);
 }
 @media (min-width: 1700px) {
-  .building-hero {
-    margin-top: -15px;
-  }
   .discovery-intro h1 {
     font-size: 3.3rem;
   }
@@ -1124,16 +1016,6 @@ footer {
   }
   .primary-pills button {
     padding: 10px 18px;
-  }
-  .building-hero {
-    padding-top: 35px;
-  }
-  .building-hero figcaption {
-    display: block;
-  }
-  .building-hero figcaption > span {
-    display: block;
-    margin-top: 4px;
   }
   .header-actions {
     gap: 17px;
@@ -1208,22 +1090,6 @@ footer {
     flex: 1;
     padding: 11px 9px;
     font-size: 0.875rem;
-  }
-  .building-hero {
-    position: relative;
-    top: auto;
-    grid-row: auto;
-    padding: 0;
-    margin: 21px 0 0;
-    width: 100%;
-    align-self: center;
-  }
-  .building-hero img {
-    max-height: 430px;
-    object-fit: contain;
-  }
-  .building-hero figcaption {
-    display: none;
   }
   .room-section {
     margin-top: 27px;
@@ -1381,9 +1247,6 @@ footer {
     animation: none !important;
     scroll-behavior: auto !important;
   }
-}
-.building-hero {
-  background: var(--background);
 }
 .study-modal {
   border-color: var(--border);
@@ -1608,8 +1471,6 @@ strong {
 .eyebrow,
 .row-time,
 .list-tools,
-.building-hero figcaption,
-.building-hero figcaption > span:first-child,
 footer {
   font-size: max(12px, 0.75rem);
 }
@@ -1630,9 +1491,6 @@ footer {
 }
 .room-row-capacity {
   white-space: nowrap;
-}
-.building-hero figcaption {
-  flex-wrap: wrap;
 }
 @media (max-width: 1150px) {
   .room-row {
@@ -1797,7 +1655,6 @@ footer {
 .dur-row button,
 .wk-btn,
 .nav-link,
-.building-stat,
 .quick-action .qa-circle {
   transition:
     transform 0.15s ease,

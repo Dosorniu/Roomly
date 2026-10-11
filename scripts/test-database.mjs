@@ -550,8 +550,23 @@ try {
     2,
     "the booker arriving joins the student already in the shared room",
   );
+  await asUser(bk2, "select public.roomly_watch($1,true)", ["321"]);
   await command(bk1, "leave", "321");
   await command(bk2, "leave", "321");
+  assert.equal(
+    await notices("321"),
+    0,
+    "leaving while a booking runs does not claim the room is free",
+  );
+  await db.query(
+    "update roomly_private.bookings set starts_at=$1, ends_at=$2 where room_id='321'",
+    [t1 - 1900000, Date.now() - 1000],
+  );
+  assert.equal(
+    await notices("321"),
+    1,
+    "the alert comes when the booking ends",
+  );
 
   // Reserve with p_share: next to an open session only a shared booking is allowed.
   const slotD = berlinSlot(4, 9, 60);
@@ -575,7 +590,7 @@ try {
   await command(bk2, "leave", "303");
 
   console.log(
-    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation, bookings (reserve, overlap, anonymity, cancel, campus hours, duration), reservations vs check-in, check-in without confirmation, Free again after expiry, shared bookings, one access-code flow for every email, alerts when a check-in or booking ends.",
+    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation, bookings (reserve, overlap, anonymity, cancel, campus hours, duration), reservations vs check-in, check-in without confirmation, Free again after expiry, shared bookings, one access-code flow for every email, alerts when a check-in or booking ends, no false alert on leave during a booking.",
   );
 } finally {
   await db.close();

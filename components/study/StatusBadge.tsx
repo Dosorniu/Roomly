@@ -3,7 +3,6 @@ export const statusLabels: Record<Status, string> = {
   free: "Free",
   share: "Open to Share",
   occupied: "Occupied",
-  unknown: "Unknown",
 };
 export function StatusBadge({
   status,

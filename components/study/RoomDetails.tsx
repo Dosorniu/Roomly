@@ -112,9 +112,7 @@ export function RoomDetails({
                   ? timeLabel(session.expectedEnd)
                   : reservation
                     ? timeLabel(reservation.endsAt)
-                    : status === "free"
-                      ? "Now"
-                      : "Unconfirmed"}
+                    : "Now"}
               </strong>
               <span>
                 {session
@@ -123,9 +121,7 @@ export function RoomDetails({
                     ? "reserved until"
                     : myReservation
                       ? "your booking ends"
-                      : status === "free"
-                        ? "available to check in"
-                        : "please check in person"}
+                      : "available to check in"}
               </span>
             </div>
           </div>
@@ -172,9 +168,7 @@ export function RoomDetails({
                       ? "A space of your own."
                       : status === "share"
                         ? "A table worth sharing."
-                        : status === "occupied"
-                          ? "A session is in progress."
-                          : "No recent update."}
+                        : "A session is in progress."}
           </h2>
           <p>
             {member
@@ -191,9 +185,7 @@ export function RoomDetails({
                       ? "Already here? Check in so others know the room is in use."
                       : status === "share"
                         ? "Join if you are here and there is a seat available."
-                        : status === "occupied"
-                          ? "This room is currently closed to additional participants."
-                          : "Check the room in person before starting a session."}
+                        : "This room is currently closed to additional participants."}
           </p>
 
           {shared && !canInteract && (
@@ -218,20 +210,17 @@ export function RoomDetails({
             </p>
           )}
 
-          {!member &&
-            (status === "free" ||
-              status === "unknown" ||
-              (sharedBooking && !session)) && (
-              <button
-                className="primary-button full"
-                disabled={canInteract && other}
-                onClick={() => {
-                  if (requireInteractionAccess()) setModal("checkIn");
-                }}
-              >
-                <DoorOpen size={18} /> Check In
-              </button>
-            )}
+          {!member && (status === "free" || (sharedBooking && !session)) && (
+            <button
+              className="primary-button full"
+              disabled={canInteract && other}
+              onClick={() => {
+                if (requireInteractionAccess()) setModal("checkIn");
+              }}
+            >
+              <DoorOpen size={18} /> Check In
+            </button>
+          )}
 
           {!member && status === "share" && !!session && (
             <button
