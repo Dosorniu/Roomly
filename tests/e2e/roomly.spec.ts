@@ -146,3 +146,42 @@ test("a calendar booking can be shared with others", async ({ page }) => {
   await sheet.getByRole("button", { name: "Confirm booking" }).click();
   await expect(page.locator(".bkblock.mine")).toContainText("open");
 });
+
+test("cancelling your own booking asks for confirmation first", async ({
+  page,
+}) => {
+  await page.goto("/rooms/214");
+  await page.locator("button.freecell").first().click();
+  await page.getByRole("button", { name: "Confirm booking" }).click();
+  const mine = page.locator(".bkblock.mine");
+  await expect(mine).toHaveCount(1);
+  await mine.click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByText("Cancel this booking?")).toBeVisible();
+  await sheet.getByRole("button", { name: "Keep booking" }).click();
+  await expect(mine).toHaveCount(1);
+  await mine.click();
+  await page.getByRole("button", { name: "Cancel booking" }).click();
+  await expect(mine).toHaveCount(0);
+});
+
+test("My bookings shows the current check-in and can leave it", async ({
+  page,
+}) => {
+  await page.goto("/rooms/321");
+  await page.getByRole("button", { name: "Check In", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Confirm Check In", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Leave Room", exact: true }),
+  ).toBeVisible();
+  // Another room names the room you are in.
+  await page.goto("/rooms/214");
+  await expect(page.getByText("You are checked in to")).toBeVisible();
+  await page.goto("/bookings");
+  await expect(page.getByText("Checked in now")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open room" })).toBeVisible();
+  await page.getByRole("button", { name: "Leave", exact: true }).click();
+  await expect(page.getByText("Checked in now")).toHaveCount(0);
+});

@@ -96,6 +96,11 @@ export function BookingCalendar({
   const [busy, setBusy] = useState(false);
   const [dur, setDur] = useState(60);
   const [share, setShare] = useState(false);
+  // Cancelling your own booking asks first, so a stray tap never deletes it.
+  const [cancelling, setCancelling] = useState<{
+    id: string;
+    label: string;
+  } | null>(null);
   const [minWk] = useState(firstOpenOffset);
   const [maxWk] = useState(() => lastOpenOffset(firstOpenOffset()));
   const [weekOffset, setWeekOffset] = useState(minWk);
@@ -182,6 +187,7 @@ export function BookingCalendar({
     try {
       await cancelBooking(id);
       await load();
+      setCancelling(null);
       toast.success("Reservation cancelled.");
     } catch (e) {
       toast.error(
@@ -336,6 +342,7 @@ export function BookingCalendar({
                         <button
                           key={st}
                           className="freecell"
+                          aria-label={`Book ${WD[(d.getDay() + 6) % 7]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${fmt(st)}`}
                           style={{ top: i * CELL, height: CELL }}
                           disabled={busy}
                           onClick={() => {
@@ -365,36 +372,57 @@ export function BookingCalendar({
                         </button>
                       );
                     })}
-                  {blocks.map((b) => (
-                    <div
-                      key={b.id}
-                      className={`bkblock ${b.mine ? "mine" : "busy"}`}
-                      style={{
-                        top: ((b.startMin - OPEN) / STEP) * CELL,
-                        height: Math.max(
-                          CELL - 4,
-                          ((b.endMin - b.startMin) / STEP) * CELL,
-                        ),
-                        cursor: b.mine ? "pointer" : "default",
-                      }}
-                      onClick={b.mine ? () => onCancel(b.id) : undefined}
-                      title={
-                        b.mine
-                          ? "Tap to cancel your reservation"
-                          : b.share
-                            ? "Booked — others can join"
+                  {blocks.map((b) => {
+                    const label = `${WD[(d.getDay() + 6) % 7]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${fmt(b.startMin)}–${fmt(b.endMin)}`;
+                    const ask = () => setCancelling({ id: b.id, label });
+                    return (
+                      <div
+                        key={b.id}
+                        className={`bkblock ${b.mine ? "mine" : "busy"}`}
+                        role={b.mine ? "button" : undefined}
+                        tabIndex={b.mine ? 0 : undefined}
+                        aria-label={
+                          b.mine
+                            ? `Your booking ${label}. Cancel`
+                            : `Booked ${label}`
+                        }
+                        onKeyDown={
+                          b.mine
+                            ? (e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  ask();
+                                }
+                              }
                             : undefined
-                      }
-                    >
-                      <span>
-                        {b.by}
-                        {b.share ? " · open" : ""}
-                      </span>
-                      <small>
-                        {fmt(b.startMin)}–{fmt(b.endMin)}
-                      </small>
-                    </div>
-                  ))}
+                        }
+                        style={{
+                          top: ((b.startMin - OPEN) / STEP) * CELL,
+                          height: Math.max(
+                            CELL - 4,
+                            ((b.endMin - b.startMin) / STEP) * CELL,
+                          ),
+                          cursor: b.mine ? "pointer" : "default",
+                        }}
+                        onClick={b.mine ? ask : undefined}
+                        title={
+                          b.mine
+                            ? "Tap to cancel your reservation"
+                            : b.share
+                              ? "Booked — others can join"
+                              : undefined
+                        }
+                      >
+                        <span>
+                          {b.by}
+                          {b.share ? " · open" : ""}
+                        </span>
+                        <small>
+                          {fmt(b.startMin)}–{fmt(b.endMin)}
+                        </small>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
@@ -404,8 +432,8 @@ export function BookingCalendar({
 
       <p className="small-note">
         Pick a duration, tap a free start time, then confirm. Tap your own slot
-        to cancel it. Bookings are anonymous — others only see that a slot is
-        taken.
+        to cancel it (you will be asked to confirm). Bookings are anonymous —
+        others only see that a slot is taken.
       </p>
 
       {confirm && (
@@ -451,6 +479,36 @@ export function BookingCalendar({
               </button>
               <button className="s-go" onClick={confirmReserve} disabled={busy}>
                 Confirm booking
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {cancelling && (
+        <div
+          className="sheet-back"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCancelling(null);
+          }}
+        >
+          <div className="sheet" role="dialog" aria-modal="true">
+            <h3>Cancel this booking?</h3>
+            <p className="s-sub">{cancelling.label}</p>
+            <p className="s-sub">The slot becomes free for others to book.</p>
+            <div className="sheet-actions">
+              <button
+                className="s-cancel"
+                onClick={() => setCancelling(null)}
+                disabled={busy}
+              >
+                Keep booking
+              </button>
+              <button
+                className="s-go"
+                onClick={() => onCancel(cancelling.id)}
+                disabled={busy}
+              >
+                Cancel booking
               </button>
             </div>
           </div>

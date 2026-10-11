@@ -304,3 +304,33 @@ Database: run `supabase/migrations/202610110012_leave_alert_only_when_free.sql`
 
 Tests: database test covers leaving during a running booking (no alert) and
 the alert when that booking ends.
+
+## Update 11 — My bookings shows your check-in, safer cancelling
+
+Author: Maks (AI-assisted, Claude)
+Date: 2026-10-11
+
+Added:
+
+- My bookings shows "Checked in now" at the top: the room, until when, whether
+  others can join and how many people are inside, with Open room and Leave.
+
+Fixed:
+
+- "You are registered in another room" now names the room and links to it.
+- Cancelling a booking (in the calendar or in My bookings) asks for
+  confirmation; a single tap no longer deletes it.
+- Narrow screens: the menu button shows a dot and the menu a "New" badge when
+  there are unread availability alerts (the bell is hidden there).
+- Update Status starts from the time actually left in the session instead of
+  always "1 hour".
+- My bookings texts: heading "Your rooms"; the note now says bookings are
+  Mon–Fri 08:00–20:00, hold the whole room unless others may join, and that a
+  check-in is not a booking.
+- Accessibility: calendar slots are announced with day and time; your own
+  booking can be opened with the keyboard.
+
+Database: no changes.
+
+Tests: E2E covers the cancel confirmation and the check-in on My bookings
+(including Leave and the "checked in to …" hint).

@@ -210,6 +210,8 @@ export function StudyApp({
             canInteract={canInteract}
             shared={sharedMode}
             onRequireAuth={() => setAuthOpen(true)}
+            current={currentRoom}
+            onLeave={(roomId) => submit({ type: "leave", roomId, userId })}
           />
         ) : roomId ? (
           selected ? (

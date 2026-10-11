@@ -131,8 +131,14 @@ export function Header({
         <div className="mobile-menu">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="icon-button" aria-label="Open menu">
+              <button
+                className="icon-button"
+                aria-label={
+                  hasNotices ? "Open menu (new notifications)" : "Open menu"
+                }
+              >
                 <Menu size={22} />
+                {hasNotices && <span className="notice-dot" />}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -153,6 +159,7 @@ export function Header({
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => onPanel("notifications")}>
                 Availability notifications
+                {hasNotices && <span className="menu-new">New</span>}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {shared ? (
