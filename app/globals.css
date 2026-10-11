@@ -2134,22 +2134,6 @@ a.mb-roomname:hover {
   }
 }
 
-/* Sign-in: "I have a guest code" checkbox row. */
-.signin-form .signin-guest {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.875rem;
-  color: var(--muted-foreground);
-  cursor: pointer;
-}
-.signin-form .signin-guest input {
-  width: 1.05rem;
-  height: 1.05rem;
-  padding: 0;
-  accent-color: var(--primary);
-}
-
 /* Mobile: fit all five quick-filter circles without horizontal scroll. */
 @media (max-width: 560px) {
   .quick-actions {

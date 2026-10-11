@@ -156,6 +156,28 @@ try {
     true,
   );
   assert.equal((await snapshot(ids[3])).userId, ids[3]);
+
+  // Everyone enters the access code once, university addresses included, and
+  // the code is accepted in any letter case.
+  const cbsUser = "00000000-0000-4000-8000-0000000000c5";
+  await db.query(
+    "insert into auth.users(id,email,email_confirmed_at) values ($1,'new.student@cbs-mail.de',now())",
+    [cbsUser],
+  );
+  assert.equal(
+    (await asUser(cbsUser, "select public.roomly_access_status() as allowed"))
+      .rows[0].allowed,
+    false,
+    "a university address is not approved without the access code",
+  );
+  await asUser(cbsUser, "select public.roomly_claim_access($1)", [
+    " test-campus-code ",
+  ]);
+  assert.equal(
+    (await asUser(cbsUser, "select public.roomly_access_status() as allowed"))
+      .rows[0].allowed,
+    true,
+  );
   if (databaseUrl) {
     // Independent database connections genuinely race for the last available room.
     async function race(id) {
@@ -541,7 +563,7 @@ try {
   await command(bk2, "leave", "303");
 
   console.log(
-    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation, bookings (reserve, overlap, anonymity, cancel, campus hours, duration), reservations vs check-in, check-in without confirmation, Free again after expiry, shared bookings.",
+    "PASS: public privacy projection, invite access, database authorization, private identities, capacity, conflicts, holder transfer, durable watches/notifications, expiration, validation, bookings (reserve, overlap, anonymity, cancel, campus hours, duration), reservations vs check-in, check-in without confirmation, Free again after expiry, shared bookings, one access-code flow for every email.",
   );
 } finally {
   await db.close();
